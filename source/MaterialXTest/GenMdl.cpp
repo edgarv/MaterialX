@@ -95,6 +95,7 @@ TEST_CASE("GenShader: MDL Implementation Check", "[genmdl]")
     GenShaderUtil::checkImplementations(context, generatorSkipNodeTypes, generatorSkipNodeDefs, 65);
 }
 
+
 TEST_CASE("GenShader: MDL Unique Names", "[genmdl]")
 {
     mx::GenContext context(mx::MdlShaderGenerator::create());
@@ -108,7 +109,7 @@ TEST_CASE("GenShader: MDL Unique Names", "[genmdl]")
 }
 */
 
-/*
+
 TEST_CASE("GenShader: MDL Shader Generation", "[genmdl]")
 {
     const mx::FilePath testRootPath = mx::FilePath::getCurrentPath() / mx::FilePath("resources/Materials/TestSuite");
@@ -125,11 +126,12 @@ TEST_CASE("GenShader: MDL Shader Generation", "[genmdl]")
 
     const mx::FilePath logPath("genmdl_mdl_generate_test.txt");
 
-    MdlShaderGeneratorTester tester(mx::MdlShaderGenerator::create(), testRootPaths, libSearchPath, srcSearchPath, logPath);
+    bool writeShadersToDisk = true;
+    MdlShaderGeneratorTester tester(mx::MdlShaderGenerator::create(), testRootPaths, libSearchPath, srcSearchPath, logPath, writeShadersToDisk);
     tester.addSkipLibraryFiles();
 
     const mx::GenOptions genOptions;
     mx::FilePath optionsFilePath = testRootPath / mx::FilePath("_options.mtlx");
     tester.validate(genOptions, optionsFilePath);
 }
-*/
+

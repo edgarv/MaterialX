@@ -48,9 +48,9 @@ namespace
         "import ::anno::*",
         "import ::tex::*",
         "import ::mx::swizzle::*",
+        "import ::mx::stdlib::*",
         "import ::mx::pbrlib::*",
-        "using ::mx::core import *",
-        "using ::mx::stdlib import *"
+        "using ::mx::core import *"
     };
 }
 
@@ -65,34 +65,6 @@ MdlShaderGenerator::MdlShaderGenerator() :
     ShaderGenerator(MdlSyntax::create())
 {
     // Register build-in implementations
-
-    // <!-- <if*> -->
-    static const string SEPARATOR = "_";
-    static const string INT_SEPARATOR = "I_";
-    static const string BOOL_SEPARATOR = "B_";
-    static const StringVec IMPL_PREFIXES = { "IM_ifgreater_", "IM_ifgreatereq_", "IM_ifequal_" };
-    static const vector<CreatorFunction<ShaderNodeImpl>> IMPL_CREATE_FUNCTIONS =
-    { IfGreaterNode::create,  IfGreaterEqNode::create, IfEqualNode::create };
-    static const vector<bool> IMPL_HAS_INTVERSION = { true, true, true };
-    static const vector<bool> IMPL_HAS_BOOLVERSION = { false, false, true };
-    static const StringVec IMPL_TYPES = { "float", "color2", "color3", "color4", "vector2", "vector3", "vector4" };
-    for (size_t i = 0; i < IMPL_PREFIXES.size(); i++)
-    {
-        const string& implPrefix = IMPL_PREFIXES[i];
-        for (const string& implType : IMPL_TYPES)
-        {
-            const string implRoot = implPrefix + implType;
-            registerImplementation(implRoot + SEPARATOR + MdlShaderGenerator::LANGUAGE, IMPL_CREATE_FUNCTIONS[i]);
-            if (IMPL_HAS_INTVERSION[i])
-            {
-                registerImplementation(implRoot + INT_SEPARATOR + MdlShaderGenerator::LANGUAGE, IMPL_CREATE_FUNCTIONS[i]);
-            }
-            if (IMPL_HAS_BOOLVERSION[i])
-            {
-                registerImplementation(implRoot + BOOL_SEPARATOR + MdlShaderGenerator::LANGUAGE, IMPL_CREATE_FUNCTIONS[i]);
-            }
-        }
-    }
 
     // <!-- <switch> -->
     // <!-- 'which' type : float -->
@@ -292,7 +264,7 @@ ShaderPtr MdlShaderGenerator::generate(const string& name, ElementPtr element, G
     const VariableBlock& constants = stage.getConstantBlock();
     if (constants.size())
     {
-        emitVariableDeclarations(constants, _syntax->getConstantQualifier(), SEMICOLON, context, stage);
+        emitVariableDeclarations(constants, _syntax->getConstantQualifier(), Syntax::SEMICOLON, context, stage);
         emitLineBreak(stage);
     }
 
@@ -304,7 +276,7 @@ ShaderPtr MdlShaderGenerator::generate(const string& name, ElementPtr element, G
 
     if (graph.hasClassification(ShaderNode::Classification::TEXTURE))
     {
-        emitLine("color finalOutput__ = mk_color(" + result + ")", stage);
+        emitLine("color finalOutput__ = mk_color3(" + result + ")", stage);
 
         // End shader body
         emitScopeEnd(stage);

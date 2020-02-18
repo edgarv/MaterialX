@@ -5,6 +5,7 @@
 
 #include <MaterialXGenMdl/MdlSyntax.h>
 
+#include <MaterialXFormat/File.h>
 #include <MaterialXGenShader/Library.h>
 #include <MaterialXGenShader/TypeDesc.h>
 
@@ -35,7 +36,13 @@ public:
 
     string getValue(const Value& value, bool /*uniform*/) const override
     {
-        return getName() + "(\"/" + value.getValueString() + "\")";
+        string pathSeparator("");
+        FilePath path(value.getValueString());
+        if (!path.isAbsolute())
+        {
+            pathSeparator = "/";
+        }
+        return getName() + "(\"" + pathSeparator + value.getValueString() + "\")";
     }
 };
 

@@ -205,7 +205,7 @@ ShaderPtr MdlShaderGenerator::generate(const string& name, ElementPtr element, G
     emitLine("mdl " + MDL_VERSION, stage);
     emitLineBreak(stage);
 
-    emitLine("using mx = ::materialx", stage);
+    emitLine("using mx = materialx", stage);
 
     // Emit module imports
     for (const string& module : DEFAULT_IMPORTS)

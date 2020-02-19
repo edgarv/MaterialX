@@ -143,12 +143,20 @@ void ShaderGenerator::emitVariableDeclaration(const ShaderPort* variable, const 
                                               bool assignValue) const
 {
     string str = qualifier.empty() ? EMPTY_STRING : qualifier + " ";
-    str += _syntax->getTypeName(variable->getType()) + " " + variable->getVariable();
+    str += _syntax->getTypeName(variable->getType());
+    
+    bool haveArray = variable->getType()->isArray() && variable->getValue();
+    if (haveArray)
+    {
+        str += _syntax->getArrayTypeSuffix(variable->getType(), *variable->getValue());
+    }
+    
+    str += " " + variable->getVariable();
 
     // If an array we need an array qualifier (suffix) for the variable name
-    if (variable->getType()->isArray() && variable->getValue())
+    if (haveArray)
     {
-        str += _syntax->getArraySuffix(variable->getType(), *variable->getValue());
+        str += _syntax->getArrayVariableSuffix(variable->getType(), *variable->getValue());
     }
 
     if (assignValue)

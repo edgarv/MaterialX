@@ -142,16 +142,18 @@ void MdlShaderGeneratorTester::compileSource(const std::vector<mx::FilePath>& so
     mx::FilePath errorFile = moduleToTestPath / (moduleToTest + "_errors.txt");
     mdlcCommand += " > " + errorFile.asString() + " 2>&1";
 
-    _logFile << mdlcCommand << std::endl;
-
     int returnValue = std::system(mdlcCommand.c_str());
-    _logFile << "\tReturn code: " << std::to_string(returnValue) << std::endl;
-    std::ifstream errorStream(errorFile);
-    mx::StringVec result;
-    std::string line;
-    while (std::getline(errorStream, line))
+    if (returnValue != 0)
     {
-        _logFile << "\tError: " << line << std::endl;
+        _logFile << mdlcCommand << std::endl;
+        _logFile << "\tReturn code: " << std::to_string(returnValue) << std::endl;
+        std::ifstream errorStream(errorFile);
+        mx::StringVec result;
+        std::string line;
+        while (std::getline(errorStream, line))
+        {
+            _logFile << "\tError: " << line << std::endl;
+        }
     }
 }
 

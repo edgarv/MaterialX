@@ -521,4 +521,22 @@ string MdlSyntax::getSwizzledVariable(const string& srcName, const TypeDesc* src
     return Syntax::getSwizzledVariable(srcName, srcType, channels, dstType);
 }
 
+string MdlSyntax::getArrayTypeSuffix(const TypeDesc* type, const Value& value) const
+{
+    if (type->isArray())
+    {
+        if (value.isA<vector<float>>())
+        {
+            const size_t size = value.asA<vector<float>>().size();
+            return "[" + std::to_string(size) + "]";
+        }
+        else if (value.isA<vector<int>>())
+        {
+            const size_t size = value.asA<vector<int>>().size();
+            return "[" + std::to_string(size) + "]";
+        }
+    }
+    return string();
+}
+
 } // namespace MaterialX

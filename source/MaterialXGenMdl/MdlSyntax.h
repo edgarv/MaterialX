@@ -33,6 +33,12 @@ public:
 
     string getSwizzledVariable(const string& srcName, const TypeDesc* srcType, const string& channels, const TypeDesc* dstType) const override;
 
+    /// Override to return array type suffix.
+    string getArrayTypeSuffix(const TypeDesc* type, const Value& value) const;
+
+    /// Override to indicate array variables have no array suffix.
+    string getArrayVariableSuffix(const TypeDesc*, const Value&) const override { return EMPTY_STRING; };
+
     static const string CONST_QUALIFIER;
     static const string UNIFORM_QUALIFIER;
     static const StringVec VECTOR2_MEMBERS;

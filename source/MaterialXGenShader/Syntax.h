@@ -147,8 +147,11 @@ class Syntax
     /// Return the characters used to end a multi line comments block.
     virtual const string& getEndMultiLineComment() const { return END_MULTI_LINE_COMMENT; };
 
+    /// Return the array suffix to use for declaring an array type.
+    virtual string getArrayTypeSuffix(const TypeDesc*, const Value&) const { return EMPTY_STRING; };
+
     /// Return the array suffix to use for declaring an array variable.
-    virtual string getArraySuffix(const TypeDesc* type, const Value& value) const;
+    virtual string getArrayVariableSuffix(const TypeDesc* type, const Value& value) const;
 
     /// Query if given type is suppored in the syntax.
     /// By default all types are assumed to be supported.

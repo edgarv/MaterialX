@@ -271,7 +271,7 @@ bool Syntax::typeSupported(const TypeDesc*) const
     return true;
 }
 
-string Syntax::getArraySuffix(const TypeDesc* type, const Value& value) const
+string Syntax::getArrayVariableSuffix(const TypeDesc* type, const Value& value) const
 {
     if (type->isArray())
     {

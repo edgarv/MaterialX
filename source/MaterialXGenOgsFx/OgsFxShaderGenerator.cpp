@@ -447,7 +447,7 @@ void OgsFxShaderGenerator::emitVariableDeclaration(const ShaderPort* variable, c
         // If an array we need an array qualifier (suffix) for the variable name
         if (variable->getType()->isArray() && variable->getValue())
         {
-            str += _syntax->getArraySuffix(variable->getType(), *variable->getValue());
+            str += _syntax->getArrayVariableSuffix(variable->getType(), *variable->getValue());
         }
 
         if (!variable->getSemantic().empty())

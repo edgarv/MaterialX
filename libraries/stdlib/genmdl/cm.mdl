@@ -112,7 +112,7 @@ export float4 mx_gamma22_to_linear_color4(float4 mxp_in)
     return ::math::pow( ::math::max( float4(0.0, 0.0, 0.0, 0.0), mxp_in ), gamma );
 }
 
-export color4 mx_gamma22_to_linear_color4(color mxp_in)
+export color4 mx_gamma22_to_linear_color4(color4 mxp_in)
 {
     return mk_color4(mx_gamma22_to_linear_color4(mk_float4(mxp_in)));
 }

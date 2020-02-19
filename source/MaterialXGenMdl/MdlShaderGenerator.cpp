@@ -48,9 +48,10 @@ namespace
         "import ::anno::*",
         "import ::tex::*",
         "import ::mx::swizzle::*",
-        "import ::mx::stdlib::*",
         "import ::mx::pbrlib::*",
-        "using ::mx::core import *"
+        "import ::mx::cm::*",
+        "using ::mx::stdlib import *",
+        "using ::mx::core import *",
     };
 }
 

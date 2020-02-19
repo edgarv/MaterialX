@@ -46,7 +46,7 @@ def _loadLibraries(doc, searchPath, libraryPath):
 def _writeHeader(file, version):
     file.write('mdl ' + version + ';\n')
     file.write('using core import *;\n')
-    IMPORT_LIST = { '::anno::*', '::base::*', '.::swizzle::*', '::math::*', '::state::*', '::tex::*', '::state::*',  '::vectormatrix::*', '::hsv::*'}
+    IMPORT_LIST = { '::anno::*', '::base::*', '.::swizzle::*', '.::cm::*', '::math::*', '::state::*', '::tex::*', '::state::*',  '::vectormatrix::*', '::hsv::*'}
     # To verify what are the minimal imports required
     for i in IMPORT_LIST:
         file.write('import' + i + ';\n')
@@ -62,12 +62,6 @@ def _writeHeader(file, version):
     file.write( '   return ::tex::wrap_repeat;\n')
     file.write('    }\n')
     file.write('}\n\n')
-    #file.write('color4 mk_color4( float4 f ) {\n')
-    #file.write('    return color4( color(f.x,f.y,f.z), f.w );\n')
-    #file.write('}\n\n')
-    #file.write('float4 mk_float4( float f ) {\n')
-    #file.write('    return float4(f, f, f, f);\n')
-    #file.write('}\n\n')
 
 def _mapGeomProp(geomprop):
     outputValue = ''
@@ -201,12 +195,18 @@ def _writeTransformMatrix(file, nodeName):
         file.write(INDENT + 'return mxp_mat * mxp_in;\n')
 
 def _writeTwoArgumentCombine(file, outputType):
+    if outputType == 'color':
+        outputType = 'color3';
     file.write(INDENT + 'return mk_' + outputType + '(mxp_in1, mxp_in2);\n')
 
 def _writeThreeArgumentCombine(file, outputType):
+    if outputType == 'color':
+        outputType = 'color3';
     file.write(INDENT + 'return mk_' + outputType + '(mxp_in1, mxp_in2, mxp_in3);\n')
 
 def _writeFourArgumentCombine(file, outputType):
+    if outputType == 'color':
+        outputType = 'color3';
     file.write(INDENT + 'return mk_' + outputType + '(mxp_in1, mxp_in2, mxp_in3, mxp_in4);\n')
 
 def _writeIfGreater(file, comparitor):
@@ -216,6 +216,19 @@ def _writeTranformSpace(file, outputType, functionName, input, fromspace, tospac
     file.write(INDENT + 'state::coordinate_space fromSpace = ::mx_map_space(' + fromspace + ');\n')
     file.write(INDENT + 'state::coordinate_space toSpace  = ::mx_map_space(' + tospace + ');\n')
     file.write(INDENT + 'return mk_' + outputType + '( state::' + functionName + '(fromSpace, toSpace, ' + input + '));\n')
+
+def writeNormalMap(file):
+    file.write(INDENT + 'if (mxp_space == "tangent")\n')
+    file.write(INDENT + '{\n')
+    file.write(INDENT + '    float3 v = mxp_in * 2.0 - 1.0;\n')
+    file.write(INDENT + '    float3 B = ::math::normalize(::math::cross(mxp_normal, mxp_tangent));\n')
+    file.write(INDENT + '    return ::math::normalize(mxp_tangent * v.x * mxp_scale + B * v.y * mxp_scale + mxp_normal * v.z);\n')
+    file.write(INDENT + '}\n')
+    file.write(INDENT + 'else\n')
+    file.write(INDENT + '{\n')
+    file.write(INDENT + '    float3 n = mxp_in * 2.0 - 1.0;\n')
+    file.write(INDENT + '    return ::math::normalize(n);\n')
+    file.write(INDENT + '}\n')
 
 def _writeRemap(file, outputType):
     if outputType == 'color4':
@@ -771,6 +784,8 @@ def main():
                 elif nodeCategory == 'convert':
                     if outputType == 'float':
                         file.write(INDENT + 'return ' + outputType + '(mxp_in);\n')
+                    elif outputType == 'color':
+                        file.write(INDENT + 'return mk_color3(mxp_in);\n')
                     else:
                         file.write(INDENT + 'return mk_' + outputType + '(mxp_in);\n')
                     wroteImplementation = True
@@ -859,6 +874,9 @@ def main():
                     wroteImplementation = True
                 elif nodeCategory == 'overlay':
                     _writeOverlay(file, outputType)
+                    wroteImplementation = True
+                elif nodeCategory == 'normalmap':
+                    writeNormalMap(file)
                     wroteImplementation = True
 
                 if wroteImplementation:

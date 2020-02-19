@@ -147,11 +147,16 @@ public:
 
     string getValue(const StringVec& values, bool /*uniform*/) const override
     {
-        if (values.size() < 4)
+        size_t valueCount = values.size();
+        if (valueCount == 4)
         {
-            throw ExceptionShaderGenError("Too few values given to construct a color4 value");
+            return "mk_color4(" + values[0] + ", " + values[1] + ", " + values[2] + ", " + values[3] + ")";        
         }
-        return "mk_color4(" + values[0] + ", " + values[1] + ", " + values[2] + ", " + values[3] + ")";
+        else if (valueCount == 2)
+        {
+            return "mk_color4(" + values[0]  + ", " + values[1] + ")";
+        }
+        throw ExceptionShaderGenError("Incorrect number of values to construct a color4 value:" + std::to_string(valueCount));
     }
 };
 

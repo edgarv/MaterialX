@@ -18,6 +18,10 @@ ShaderNodeImplPtr SourceCodeNodeMdl::create()
     return std::make_shared<SourceCodeNodeMdl>();
 }
 
+void SourceCodeNodeMdl::emitFunctionDefinition(const ShaderNode&, GenContext&, ShaderStage&) const
+{
+}
+
 void SourceCodeNodeMdl::emitFunctionCall(const ShaderNode& node, GenContext& context, ShaderStage& stage) const
 {
     BEGIN_SHADER_STAGE(stage, Stage::PIXEL)

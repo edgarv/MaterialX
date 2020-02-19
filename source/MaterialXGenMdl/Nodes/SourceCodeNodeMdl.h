@@ -19,6 +19,7 @@ class SourceCodeNodeMdl : public SourceCodeNode
 public:
     static ShaderNodeImplPtr create();
 
+    void emitFunctionDefinition(const ShaderNode&, GenContext&, ShaderStage&) const override;
     void emitFunctionCall(const ShaderNode& node, GenContext& context, ShaderStage& stage) const override;
 };
 

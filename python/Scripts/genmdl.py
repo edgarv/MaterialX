@@ -308,10 +308,14 @@ def main():
     DEFINITION_PREFIX = 'ND_'
     IMPLEMENTATION_PREFIX = 'IM_'
     IMPLEMENTATION_STRING = 'impl'
-    GENMDL = 'genmdl/materialx'
+    GENMDL = 'genmdl'
+    DESINATION_FOLDER = 'genmdl/materialx'
 
     # Create target directory if don't exist
-    outputPath = os.path.join(libraryPath, GENMDL)
+    impl_outputPath = os.path.join(libraryPath, GENMDL)
+    if not os.path.exists(impl_outputPath):
+        os.mkdir(impl_outputPath)
+    outputPath = os.path.join(libraryPath, DESINATION_FOLDER)
     if not os.path.exists(outputPath):
         os.mkdir(outputPath)
 
@@ -319,7 +323,7 @@ def main():
 
     # Write to single file if module name specified
     if len(moduleName):
-        file = open(outputPath + '/' + moduleName + '.ref_mdl', 'w+')
+        file = open(outputPath + '/' + moduleName + '_ref.mdl', 'w+')
         _writeHeader(file, version)
 
     # Dictionary to map from MaterialX type declarations
@@ -426,9 +430,9 @@ def main():
         impl = implDoc.addImplementation(implname)
         impl.setNodeDef(nodedef)
         if len(moduleName):
-            impl.setFile('stdlib/genmdl/materialx/' + moduleName + '.ref_mdl')
+            impl.setFile('stdlib/' + DESINATION_FOLDER + '/' + moduleName + '.ref_mdl')
         else:
-            impl.setFile('stdlib/genmdl/materialx/' + filename)
+            impl.setFile('stdlib/' + DESINATION_FOLDER + '/' + filename)
 
         functionName = FUNCTION_PREFIX + nodeName
         functionCallName = functionName
@@ -651,8 +655,8 @@ def main():
                         file.write(INDENT + 'return mk_color4(mk_float4(mxp_in1) / mk_float4(mxp_in2));')
                         wroteImplementation = True
                     elif outputType == 'float3x3' or outputType == 'float4x4':
-                        print('Skip division implementation for ' + outputType + '. Not supported in MDL')
-                        #file.write(INDENT + 'return ' + outputType + '(mxp_in1) / ' + outputType + '(mxp_in2);\n')
+                        file.write(INDENT + 'return vectormatrix::mx_divide(mxp_in1, mxp_in2);\n')
+                        wroteImplementation = True
                     else:
                         file.write(INDENT + 'return mxp_in1 / mxp_in2;\n')
                         wroteImplementation = True
@@ -757,6 +761,12 @@ def main():
                     wroteImplementation = True
                 elif nodeCategory == 'outside':
                     _writeOperatorFunc(file, outputType, 'mxp_in', '*', '(1.0 - mxp_mask)')
+                    wroteImplementation = True
+                elif nodeCategory == 'in':
+                    if outputType == 'float2':
+                        _writeOperatorFunc(file, outputType, 'mxp_fg', '*', 'mxp_bg*(1.0-mxp_fg.y)')
+                    else:
+                        _writeOperatorFunc(file, outputType, 'mxp_fg', '*', 'mxp_bg*(1.0-mxp_fg.a)')
                     wroteImplementation = True
                 elif nodeCategory == 'mix':
                     _writeThreeArgumentFunc(file, outputType, '::math::lerp', 'mxp_bg', 'mxp_fg', 'mxp_mix')
@@ -900,7 +910,7 @@ def main():
 
     # Save implementation reference file to disk
     implFileName = moduleName + '_gen_' + IMPLEMENTATION_STRING + '.ref_mtlx'
-    implPath = os.path.join(outputPath, implFileName)
+    implPath = os.path.join(impl_outputPath, implFileName)
     print('Wrote implementation file: ' + implPath + '. ' + str(implementedCont) + '/' + str(totalCount) + '\n')
     mx.writeToXmlFile(implDoc, implPath)
 

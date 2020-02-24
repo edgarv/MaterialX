@@ -279,6 +279,52 @@ def _writeOverlay(file, outputType):
         file.write(INDENT + 'overlayval = ::math::lerp(lower, upper, mask);\n')
         file.write(INDENT + 'return ' + outputType + '(::math::lerp(mxp_bg, overlayval, mxp_mix));\n')
 
+def _writeDisjointOver(file, outputType):
+    if outputType == 'float2':
+        file.write(INDENT + 'float2 result;\n')
+        file.write(INDENT + 'float summedAlpha = mxp_fg.y + mxp_bg.y;\n')
+        file.write(INDENT + 'if (summedAlpha <= 1)\n')
+        file.write(INDENT + '{\n')
+        file.write(INDENT + '   result.x = mxp_fg.x + mxp_bg.x;\n')
+        file.write(INDENT + '}\n')
+        file.write(INDENT + 'else\n')
+        file.write(INDENT + '{\n')
+        file.write(INDENT + '    if (::math::abs(mxp_bg.y) < FLOAT_EPS)\n')
+        file.write(INDENT + '    {\n')
+        file.write(INDENT + '      result.x = 0.0;\n')
+        file.write(INDENT + '    }\n')
+        file.write(INDENT + '    else\n')
+        file.write(INDENT + '    {\n')
+        file.write(INDENT + '      result.x = mxp_fg.x + ((mxp_bg.x * (1-mxp_fg.y)) / mxp_bg.y);\n')
+        file.write(INDENT + '    }\n')
+        file.write(INDENT + '}\n')
+        file.write(INDENT + 'result.y = ::math::min(summedAlpha, 1.0);\n')
+        file.write(INDENT + 'result.x = result.x * mxp_mix + (1.0 - mxp_mix) * mxp_bg.x;\n')
+        file.write(INDENT + 'result.y = result.y * mxp_mix + (1.0 - mxp_mix) * mxp_bg.y;\n')
+        file.write(INDENT + 'return result;\n')
+    else:
+        file.write(INDENT + 'color4 result;\n')
+        file.write(INDENT + 'float summedAlpha = mxp_fg.a + mxp_bg.a;\n')
+        file.write(INDENT + 'if (summedAlpha <= 1)\n')
+        file.write(INDENT + '{\n')
+        file.write(INDENT + '   result.rgb = mxp_fg.rgb + mxp_bg.rgb;\n')
+        file.write(INDENT + '}\n')
+        file.write(INDENT + 'else\n')
+        file.write(INDENT + '{\n')
+        file.write(INDENT + '    if (::math::abs(mxp_bg.a) < FLOAT_EPS)\n')
+        file.write(INDENT + '    {\n')
+        file.write(INDENT + '      result.rgb = color(0.0,0.0,0.0);\n')
+        file.write(INDENT + '    }\n')
+        file.write(INDENT + '    else\n')
+        file.write(INDENT + '    {\n')
+        file.write(INDENT + '      result.rgb = mxp_fg.rgb + ((mxp_bg.rgb * (1-mxp_fg.a)) / mxp_bg.a);\n')
+        file.write(INDENT + '    }\n')
+        file.write(INDENT + '}\n')
+        file.write(INDENT + 'result.a = ::math::min(summedAlpha, 1.0);\n')
+        file.write(INDENT + 'result.rgb = result.rgb * mxp_mix + (1.0 - mxp_mix) * mxp_bg.rgb;\n')
+        file.write(INDENT + 'result.a = result.a * mxp_mix + (1.0 - mxp_mix) * mxp_bg.a;\n')
+        file.write(INDENT + 'return result;\n')
+
 def main():
 
     if len(sys.argv) < 2:
@@ -766,7 +812,7 @@ def main():
                     if outputType == 'float2':
                         _writeOperatorFunc(file, outputType, 'mxp_fg', '*', 'mxp_bg*(1.0-mxp_fg.y)')
                     else:
-                        _writeOperatorFunc(file, outputType, 'mxp_fg', '*', 'mxp_bg*(1.0-mxp_fg.a)')
+                        _writeOperatorFunc(file, outputType, 'mxp_fg', '*', 'mx_multiply_color4FA(mxp_bg, 1.0-mxp_fg.a)')
                     wroteImplementation = True
                 elif nodeCategory == 'mix':
                     _writeThreeArgumentFunc(file, outputType, '::math::lerp', 'mxp_bg', 'mxp_fg', 'mxp_mix')
@@ -889,6 +935,36 @@ def main():
                 elif nodeCategory == 'normalmap':
                     writeNormalMap(file)
                     wroteImplementation = True
+
+                elif nodeCategory == 'premult':
+                    if outputType == 'float2':
+                        file.write(INDENT + 'return float2(mxp_in.x * mxp_in.y, mxp_in.y);\n')
+                    elif outputType == 'color4':
+                        file.write(INDENT + 'return mk_color4(mxp_in.rgb * mxp_in.a, mxp_in.a);\n')
+                    wroteImplementation = True
+                elif nodeCategory == 'unpremult':
+                    if outputType == 'float2':
+                        file.write(INDENT + 'return float2(mxp_in.x / mxp_in.y, mxp_in.y);\n')
+                    elif outputType == 'color4':
+                        file.write(INDENT + 'return mk_color4(mxp_in.rgb / mxp_in.a, mxp_in.a);\n')
+                    wroteImplementation = True
+                elif nodeCategory == 'disjointover':
+                    _writeDisjointOver(file, outputType)
+                    wroteImplementation = True
+                elif nodeCategory == 'mask':
+                    if outputType == 'float2':
+                        file.write(INDENT + 'return (mxp_bg * mxp_fg.y * mxp_mix) + mxp_bg*(1.0-mxp_mix);\n')
+                    elif outputType == 'color4':
+                        file.write(INDENT + 'return mx_add(' +
+                            'mx_multiply_color4FA(mxp_bg,mxp_fg.a*mxp_mix),' +
+                            'mx_multiply_color4FA(mxp_bg, (1.0-mxp_mix)) );\n')
+                    wroteImplementation = True
+                #elif nodeCategory == 'matte':
+                #    wroteImplementation = True
+                #elif nodeCategory == 'out':
+                #    wroteImplementation = True
+                #elif nodeCategory == 'over':
+                #    wroteImplementation = True
 
                 if wroteImplementation:
                     implementedCont += 1

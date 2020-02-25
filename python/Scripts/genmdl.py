@@ -983,8 +983,13 @@ def main():
                         file.write(INDENT + '    (mk_float4(mxp_bg) * (1.0-mxp_mix));\n')
                         file.write(INDENT + 'return mk_color4(result);\n')
                     wroteImplementation = True
-                #elif nodeCategory == 'over':
-                #    wroteImplementation = True
+                elif nodeCategory == 'over':
+                    if outputType == 'float2':
+                        file.write(INDENT + 'return mxp_fg + (mxp_bg*(1.0-mxp_fg.y));\n')
+                    elif outputType == 'color4':
+                        file.write(INDENT + 'float4 val = mk_float4(mxp_fg) + (mk_float4(mxp_bg)*(1.0-mk_float4(mxp_fg).y));\n')
+                        file.write(INDENT + 'return mk_color4(val);\n')
+                    wroteImplementation = True
 
                 if wroteImplementation:
                     implementedCont += 1

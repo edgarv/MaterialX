@@ -46,7 +46,7 @@ def _loadLibraries(doc, searchPath, libraryPath):
 def _writeHeader(file, version):
     file.write('mdl ' + version + ';\n')
     file.write('using core import *;\n')
-    IMPORT_LIST = { '::anno::*', '::base::*', '.::swizzle::*', '.::cm::*', '::math::*', '::state::*', '::tex::*', '::state::*',  '.::vectormatrix::*', '.::hsv::*'}
+    IMPORT_LIST = { '::anno::*', '::base::*', '.::swizzle::*', '.::cm::*', '::math::*', '::state::*', '::tex::*', '::state::*',  '.::vectormatrix::*', '.::hsv::*', '.::noise::*'}
     # To verify what are the minimal imports required
     for i in IMPORT_LIST:
         file.write('import' + i + ';\n')
@@ -733,9 +733,9 @@ def main():
                 elif nodeCategory == 'transformmatrix':
                     _writeTransformMatrix(file, nodeName)
                     wroteImplementation = True
-                #elif nodeCategory == 'determinant':
-                #    _writeOneArgumentFunc(file, outputType, 'determinant')
-                #    wroteImplementation = True
+                elif nodeCategory == 'determinant':
+                    _writeOneArgumentFunc(file, outputType, 'vectormatrix::mx_determinant')
+                    wroteImplementation = True
                 elif nodeCategory == 'smoothstep':
                     _writeThreeArgumentFunc(file, outputType, '::math::smoothstep', 'mxp_in', 'mxp_low', 'mxp_high')
                     wroteImplementation = True

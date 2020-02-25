@@ -959,10 +959,30 @@ def main():
                             'mx_multiply_color4FA(mxp_bg,mxp_fg.a*mxp_mix),' +
                             'mx_multiply_color4FA(mxp_bg, (1.0-mxp_mix)) );\n')
                     wroteImplementation = True
-                #elif nodeCategory == 'matte':
-                #    wroteImplementation = True
-                #elif nodeCategory == 'out':
-                #    wroteImplementation = True
+                elif nodeCategory == 'matte':
+                    if outputType == 'float2':
+                        file.write(INDENT + 'return ' +
+                        'float2( mxp_fg.x*mxp_fg.y + mxp_bg.x*(1.0-mxp_fg.y), mxp_fg.y + (mxp_bg.y*(1.0-mxp_fg.y)) ) ' +
+                        '* mxp_mix + (mxp_bg * (1.0-mxp_mix));\n')
+                    elif outputType == 'color4':
+                        file.write(INDENT + 'color4 ls = mk_color4(\n')
+                        file.write(INDENT + '        mx_multiply_color3FA(mxp_fg.rgb,mxp_fg.a) +\n')
+                        file.write(INDENT + '        mx_multiply_color3FA(mxp_bg.rgb,(1.0-mxp_fg.a)),\n')
+                        file.write(INDENT + '        mxp_fg.a + (mxp_bg.a*(1.0-mxp_fg.a)) );\n')
+                        file.write(INDENT + 'ls = mx_multiply(ls,mk_color4(mxp_mix));\n')
+                        file.write(INDENT + 'color4 rs = mx_multiply_color4FA(mxp_bg,(1.0-mxp_mix));\n')
+                        file.write(INDENT + 'color4 result = mx_add(ls, rs);\n')
+                        file.write(INDENT + 'return result;\n')
+                    wroteImplementation = True
+                elif nodeCategory == 'out':
+                    if outputType == 'float2':
+                        file.write(INDENT + 'return (mxp_fg*(1.0-mxp_bg.y) * mxp_mix) + (mxp_bg * (1.0-mxp_mix));\n')
+                    elif outputType == 'color4':
+                        file.write(INDENT + 'float4 result =\n')
+                        file.write(INDENT + '    (mk_float4(mxp_fg)*(1.0-mk_float4(mxp_bg).z)  * mxp_mix) +\n')
+                        file.write(INDENT + '    (mk_float4(mxp_bg) * (1.0-mxp_mix));\n')
+                        file.write(INDENT + 'return mk_color4(result);\n')
+                    wroteImplementation = True
                 #elif nodeCategory == 'over':
                 #    wroteImplementation = True
 

@@ -16,7 +16,7 @@
       <parameter name="overrideFiles" type="string" value="" />
 
       <!-- Comma separated list of light setup files. Only used for hardware shading languages  -->
-      <parameter name="lightFiles" type="string" value="default_viewer_lights.mtlx" />
+      <parameter name="lightFiles" type="string" value="light_rig_test_2.mtlx" />
 
       <!-- Comma separated list of "language"_"target" specifiers to indicate which
            code generators to use.
@@ -91,7 +91,7 @@
 
       <!-- External testing: extra comma separated list of test root paths -->
       <parameter name="externalTestPaths" type="string" value="" />
-      
+
       <!-- Desired major version to upgrade to if possible -->
       <parameter name="desiredMajorVersion" type="integer" value="1" />
 

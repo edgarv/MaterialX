@@ -10,6 +10,7 @@
 #include <MaterialXGenShader/TypeDesc.h>
 
 #include <sstream>
+#include <memory>
 
 namespace MaterialX
 {
@@ -475,7 +476,7 @@ MdlSyntax::MdlSyntax()
     );
 }
 
-const TypeDesc* MdlSyntax::getEnumeratedType(const string& value)
+const TypeDesc* MdlSyntax::getEnumeratedType(const string& value) const
 {
     for (const TypeSyntaxPtr& syntax : getTypeSyntaxes())
     {
@@ -542,6 +543,44 @@ string MdlSyntax::getArrayTypeSuffix(const TypeDesc* type, const Value& value) c
         }
     }
     return string();
+}
+
+bool MdlSyntax::remapEnumeration(const string& value, const TypeDesc* type, const string& enumNames, std::pair<const TypeDesc*, ValuePtr>& result) const
+{
+    // Early out if not an enum input.
+    if (enumNames.empty())
+    {
+        return false;
+    }
+
+    // Don't convert filenames or arrays.
+    if (type == Type::FILENAME || (type && type->isArray()))
+    {
+        return false;
+    }
+
+    // Try remapping to an enum value.
+    if (!value.empty())
+    {
+        result.first = getEnumeratedType(value);
+        if (!result.first || (result.first->getSemantic() != TypeDesc::Semantic::SEMANTIC_ENUM))
+        {
+            return false;
+        }
+
+        StringVec valueElemEnumsVec = splitString(enumNames, ",");
+        auto pos = std::find(valueElemEnumsVec.begin(), valueElemEnumsVec.end(), value);
+        if (pos == valueElemEnumsVec.end())
+        {
+            throw ExceptionShaderGenError("Given value '" + value + "' is not a valid enum value.");
+        }
+        const int index = static_cast<int>(std::distance(valueElemEnumsVec.begin(), pos));
+        result.second = Value::createValue<string>(valueElemEnumsVec[index]);
+
+        return true;
+    }
+
+    return false;
 }
 
 } // namespace MaterialX

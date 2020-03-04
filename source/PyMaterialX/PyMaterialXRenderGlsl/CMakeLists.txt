@@ -24,4 +24,4 @@ target_link_libraries(
     PRIVATE ${CMAKE_DL_LIBS})
 
 install(TARGETS PyMaterialXRenderGlsl
-        DESTINATION "${CMAKE_INSTALL_PREFIX}/python/MaterialX")
+        LIBRARY DESTINATION "python/MaterialX")

@@ -1,7 +1,7 @@
 file(GLOB pymaterialxrenderosl_source "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 file(GLOB pymaterialxrenderosl_headers "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
-pybind11_add_module(PyMaterialXRenderOsl SHARED ${PYBIND11_MODULE_FLAGS} ${pymaterialxrenderosl_source} ${pymaterialxrenderosl_headers})
+pybind11_add_module(PyMaterialXRenderOsl ${PYBIND11_MODULE_FLAGS} ${pymaterialxrenderosl_source} ${pymaterialxrenderosl_headers})
 
 if(APPLE)
     set_target_properties(PyMaterialXRenderOsl PROPERTIES CXX_VISIBILITY_PRESET "default")
@@ -19,7 +19,7 @@ set_target_properties(
 
 target_link_libraries(
     PyMaterialXRenderOsl
-    PUBLIC PyMaterialXRender
+    PUBLIC MaterialXRender
            MaterialXRenderOsl
     PRIVATE ${CMAKE_DL_LIBS})
 

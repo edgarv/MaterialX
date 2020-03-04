@@ -7,7 +7,7 @@ if(NOT MATERIALX_BUILD_CONTRIB)
     list(REMOVE_ITEM pymaterialxrender_source "${CMAKE_CURRENT_SOURCE_DIR}/PySampleObjLoader.cpp")
 endif()
 
-pybind11_add_module(PyMaterialXRender SHARED ${PYBIND11_MODULE_FLAGS} ${pymaterialxrender_source} ${pymaterialxrender_headers})
+pybind11_add_module(PyMaterialXRender ${PYBIND11_MODULE_FLAGS} ${pymaterialxrender_source} ${pymaterialxrender_headers})
 
 if(APPLE)
     set_target_properties(PyMaterialXRender PROPERTIES CXX_VISIBILITY_PRESET "default")
@@ -26,13 +26,13 @@ set_target_properties(
 if(NOT MATERIALX_BUILD_CONTRIB)
   target_link_libraries(
     PyMaterialXRender
-    PUBLIC PyMaterialXGenShader
+    PUBLIC MaterialXGenShader
            MaterialXRender
     PRIVATE ${CMAKE_DL_LIBS})
 else()
   target_link_libraries(
     PyMaterialXRender
-    PUBLIC PyMaterialXGenShader
+    PUBLIC MaterialXGenShader
            MaterialXRender
            MaterialXContrib
     PRIVATE ${CMAKE_DL_LIBS})

@@ -1,7 +1,7 @@
 file(GLOB pymaterialxgenglsl_source "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 file(GLOB pymaterialxgenglsl_headers "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
-pybind11_add_module(PyMaterialXGenGlsl SHARED ${PYBIND11_MODULE_FLAGS} ${pymaterialxgenglsl_source} ${pymaterialxgenglsl_headers})
+pybind11_add_module(PyMaterialXGenGlsl ${PYBIND11_MODULE_FLAGS} ${pymaterialxgenglsl_source} ${pymaterialxgenglsl_headers})
 
 if(APPLE)
     set_target_properties(PyMaterialXGenGlsl PROPERTIES CXX_VISIBILITY_PRESET "default")
@@ -19,7 +19,7 @@ set_target_properties(
 
 target_link_libraries(
     PyMaterialXGenGlsl
-    PUBLIC PyMaterialXGenShader
+    PUBLIC MaterialXGenShader
            MaterialXGenGlsl
     PRIVATE ${CMAKE_DL_LIBS})
 

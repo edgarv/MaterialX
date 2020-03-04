@@ -1,7 +1,7 @@
 file(GLOB pymaterialxformat_source "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 file(GLOB pymaterialxformat_headers "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
-pybind11_add_module(PyMaterialXFormat SHARED ${PYBIND11_MODULE_FLAGS} ${pymaterialxformat_source} ${pymaterialxformat_headers})
+pybind11_add_module(PyMaterialXFormat ${PYBIND11_MODULE_FLAGS} ${pymaterialxformat_source} ${pymaterialxformat_headers})
 
 if(APPLE)
     set_target_properties(PyMaterialXFormat PROPERTIES CXX_VISIBILITY_PRESET "default")
@@ -19,7 +19,7 @@ set_target_properties(
 
 target_link_libraries(
     PyMaterialXFormat
-    PUBLIC PyMaterialXCore
+    PUBLIC MaterialXCore
            MaterialXFormat
     PRIVATE ${CMAKE_DL_LIBS})
 

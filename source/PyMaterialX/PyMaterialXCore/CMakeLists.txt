@@ -1,7 +1,7 @@
 file(GLOB pymaterialxcore_source "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 file(GLOB pymaterialxcore_headers "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
-pybind11_add_module(PyMaterialXCore SHARED ${PYBIND11_MODULE_FLAGS} ${pymaterialxcore_source} ${pymaterialxcore_headers})
+pybind11_add_module(PyMaterialXCore ${PYBIND11_MODULE_FLAGS} ${pymaterialxcore_source} ${pymaterialxcore_headers})
 
 if(APPLE)
     set_target_properties(PyMaterialXCore PROPERTIES CXX_VISIBILITY_PRESET "default")

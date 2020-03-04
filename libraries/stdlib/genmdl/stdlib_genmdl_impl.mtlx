@@ -572,82 +572,82 @@
   <implementation name="IM_unpremult_color4_genmdl" nodedef="ND_unpremult_color4" sourcecode="mx::stdlib::mx_unpremult_color4({{in}})" language="genmdl" />
 
   <!-- <plus> -->
-  <implementation name="IM_plus_float_genmdl" nodedef="ND_plus_float" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_plus_float" language="genmdl" />
-  <implementation name="IM_plus_color2_genmdl" nodedef="ND_plus_color2" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_plus_color2" language="genmdl" />
-  <implementation name="IM_plus_color3_genmdl" nodedef="ND_plus_color3" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_plus_color3" language="genmdl" />
-  <implementation name="IM_plus_color4_genmdl" nodedef="ND_plus_color4" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_plus_color4" language="genmdl" />
+  <implementation name="IM_plus_float_genmdl" nodedef="ND_plus_float" sourcecode="({{mix}}*({{bg}} + {{fg}})) + ((1.0-{{mix}})*{{bg}})" language="genmdl" />
+  <implementation name="IM_plus_color2_genmdl" nodedef="ND_plus_color2" sourcecode="({{mix}}*({{bg}} + {{fg}})) + ((1.0-{{mix}})*{{bg}})" language="genmdl" />
+  <implementation name="IM_plus_color3_genmdl" nodedef="ND_plus_color3" sourcecode="({{mix}}*({{bg}} + {{fg}})) + ((1.0-{{mix}})*{{bg}})" language="genmdl" />
+  <implementation name="IM_plus_color4_genmdl" nodedef="ND_plus_color4" sourcecode="mx::stdlib::mx_plus_color4({{fg}}, {{bg}}, {{mix}})" language="genmdl" />
 
   <!-- <minus> -->
-  <implementation name="IM_minus_float_genmdl" nodedef="ND_minus_float" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_minus_float" language="genmdl" />
-  <implementation name="IM_minus_color2_genmdl" nodedef="ND_minus_color2" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_minus_color2" language="genmdl" />
-  <implementation name="IM_minus_color3_genmdl" nodedef="ND_minus_color3" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_minus_color3" language="genmdl" />
-  <implementation name="IM_minus_color4_genmdl" nodedef="ND_minus_color4" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_minus_color4" language="genmdl" />
+  <implementation name="IM_minus_float_genmdl" nodedef="ND_minus_float" sourcecode="({{mix}}*({{bg}} - {{fg}})) + ((1.0-{{mix}})*{{bg}})" language="genmdl" />
+  <implementation name="IM_minus_color2_genmdl" nodedef="ND_minus_color2" sourcecode="({{mix}}*({{bg}} - {{fg}})) + ((1.0-{{mix}})*{{bg}})" language="genmdl" />
+  <implementation name="IM_minus_color3_genmdl" nodedef="ND_minus_color3" sourcecode="({{mix}}*({{bg}} - {{fg}})) + ((1.0-{{mix}})*{{bg}})" language="genmdl" />
+  <implementation name="IM_minus_color4_genmdl" nodedef="ND_minus_color4" sourcecode="mx::stdlib::mx_minus_color4({{fg}}, {{bg}}, {{mix}})" language="genmdl" />
 
   <!-- <difference> -->
-  <implementation name="IM_difference_float_genmdl" nodedef="ND_difference_float" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_difference_float" language="genmdl" />
-  <implementation name="IM_difference_color2_genmdl" nodedef="ND_difference_color2" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_difference_color2" language="genmdl" />
-  <implementation name="IM_difference_color3_genmdl" nodedef="ND_difference_color3" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_difference_color3" language="genmdl" />
-  <implementation name="IM_difference_color4_genmdl" nodedef="ND_difference_color4" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_difference_color4" language="genmdl" />
+  <implementation name="IM_difference_float_genmdl" nodedef="ND_difference_float" sourcecode="({{mix}}*math::abs({{bg}} - {{fg}})) + ((1.0-{{mix}})*{{bg}})" language="genmdl" />
+  <implementation name="IM_difference_color2_genmdl" nodedef="ND_difference_color2" sourcecode="({{mix}}*math::abs({{bg}} - {{fg}})) + ((1.0-{{mix}})*{{bg}})" language="genmdl" />
+  <implementation name="IM_difference_color3_genmdl" nodedef="ND_difference_color3" sourcecode="({{mix}}*math::abs({{bg}} - {{fg}})) + ((1.0-{{mix}})*{{bg}})" language="genmdl" />
+  <implementation name="IM_difference_color4_genmdl" nodedef="ND_difference_color4" sourcecode="mx::stdlib::mx_difference_color4({{fg}}, {{bg}}, {{mix}})" language="genmdl" />
 
   <!-- <burn> -->
-  <implementation name="IM_burn_float_genmdl" nodedef="ND_burn_float" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_burn_float" language="genmdl" />
-  <implementation name="IM_burn_color2_genmdl" nodedef="ND_burn_color2" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_burn_color2" language="genmdl" />
-  <implementation name="IM_burn_color3_genmdl" nodedef="ND_burn_color3" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_burn_color3" language="genmdl" />
-  <implementation name="IM_burn_color4_genmdl" nodedef="ND_burn_color4" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_burn_color4" language="genmdl" />
+  <implementation name="IM_burn_float_genmdl" nodedef="ND_burn_float" sourcecode="mx::stdlib::mx_burn_float({{fg}}, {{bg}}, {{mix}})" language="genmdl" />
+  <implementation name="IM_burn_color2_genmdl" nodedef="ND_burn_color2" sourcecode="mx::stdlib::mx_burn_color2({{fg}}, {{bg}}, {{mix}})" language="genmdl" />
+  <implementation name="IM_burn_color3_genmdl" nodedef="ND_burn_color3" sourcecode="mx::stdlib::mx_burn_color3({{fg}}, {{bg}}, {{mix}})" language="genmdl" />
+  <implementation name="IM_burn_color4_genmdl" nodedef="ND_burn_color4" sourcecode="mx::stdlib::mx_burn_color4({{fg}}, {{bg}}, {{mix}})" language="genmdl" />
 
   <!-- <dodge> -->
-  <implementation name="IM_dodge_float_genmdl" nodedef="ND_dodge_float" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_dodge_float" language="genmdl" />
-  <implementation name="IM_dodge_color2_genmdl" nodedef="ND_dodge_color2" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_dodge_color2" language="genmdl" />
-  <implementation name="IM_dodge_color3_genmdl" nodedef="ND_dodge_color3" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_dodge_color3" language="genmdl" />
-  <implementation name="IM_dodge_color4_genmdl" nodedef="ND_dodge_color4" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_dodge_color4" language="genmdl" />
+  <implementation name="IM_dodge_float_genmdl" nodedef="ND_dodge_float" sourcecode="mx::stdlib::mx_dodge_float({{fg}}, {{bg}}, {{mix}})" language="genmdl" />
+  <implementation name="IM_dodge_color2_genmdl" nodedef="ND_dodge_color2" sourcecode="mx::stdlib::mx_dodge_color2({{fg}}, {{bg}}, {{mix}})" language="genmdl" />
+  <implementation name="IM_dodge_color3_genmdl" nodedef="ND_dodge_color3" sourcecode="mx::stdlib::mx_dodge_color3({{fg}}, {{bg}}, {{mix}})" language="genmdl" />
+  <implementation name="IM_dodge_color4_genmdl" nodedef="ND_dodge_color4" sourcecode="mx::stdlib::mx_dodge_color4({{fg}}, {{bg}}, {{mix}})" language="genmdl" />
 
   <!-- <screen> -->
-  <implementation name="IM_screen_float_genmdl" nodedef="ND_screen_float" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_screen_float" language="genmdl" />
-  <implementation name="IM_screen_color2_genmdl" nodedef="ND_screen_color2" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_screen_color2" language="genmdl" />
-  <implementation name="IM_screen_color3_genmdl" nodedef="ND_screen_color3" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_screen_color3" language="genmdl" />
-  <implementation name="IM_screen_color4_genmdl" nodedef="ND_screen_color4" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_screen_color4" language="genmdl" />
+  <implementation name="IM_screen_float_genmdl" nodedef="ND_screen_float" sourcecode="({{mix}}*((1.0 - (1.0 - {{fg}})) * (1 - {{bg}}))) + ((1.0-{{mix}})*{{bg}})" language="genmdl" />
+  <implementation name="IM_screen_color2_genmdl" nodedef="ND_screen_color2" sourcecode="({{mix}}*((1.0 - (1.0 - {{fg}})) * (1 - {{bg}}))) + ((1.0-{{mix}})*{{bg}})" language="genmdl" />
+  <implementation name="IM_screen_color3_genmdl" nodedef="ND_screen_color3" sourcecode="({{mix}}*((1.0 - (1.0 - {{fg}})) * (1 - {{bg}}))) + ((1.0-{{mix}})*{{bg}})" language="genmdl" />
+  <implementation name="IM_screen_color4_genmdl" nodedef="ND_screen_color4" sourcecode="mx::stdlib::mx_screen_color4({{fg}}, {{bg}}, {{mix}})" language="genmdl" />
 
   <!-- <overlay> -->
-  <implementation name="IM_overlay_float_genmdl" nodedef="ND_overlay_float" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_overlay_float" language="genmdl" />
-  <implementation name="IM_overlay_color2_genmdl" nodedef="ND_overlay_color2" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_overlay_color2" language="genmdl" />
-  <implementation name="IM_overlay_color3_genmdl" nodedef="ND_overlay_color3" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_overlay_color3" language="genmdl" />
-  <implementation name="IM_overlay_color4_genmdl" nodedef="ND_overlay_color4" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_overlay_color4" language="genmdl" />
+  <implementation name="IM_overlay_float_genmdl" nodedef="ND_overlay_float" sourcecode="mx::stdlib::mx_overlay_float({{fg}}, {{bg}}, {{mix}})" language="genmdl" />
+  <implementation name="IM_overlay_color2_genmdl" nodedef="ND_overlay_color2" sourcecode="mx::stdlib::mx_overlay_color2({{fg}}, {{bg}}, {{mix}})" language="genmdl" />
+  <implementation name="IM_overlay_color3_genmdl" nodedef="ND_overlay_color3" sourcecode="mx::stdlib::mx_overlay_color3({{fg}}, {{bg}}, {{mix}})" language="genmdl" />
+  <implementation name="IM_overlay_color4_genmdl" nodedef="ND_overlay_color4" sourcecode="mx::stdlib::mx_overlay_color4({{fg}}, {{bg}}, {{mix}})" language="genmdl" />
 
   <!-- <disjointover> -->
-  <implementation name="IM_disjointover_color2_genmdl" nodedef="ND_disjointover_color2" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_disjointover_color2" language="genmdl" />
-  <implementation name="IM_disjointover_color4_genmdl" nodedef="ND_disjointover_color4" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_disjointover_color4" language="genmdl" />
+  <implementation name="IM_disjointover_color2_genmdl" nodedef="ND_disjointover_color2" sourcecode="mx::stdlib::mx_disjointover_color2({{fg}}, {{bg}}, {{mix}})" language="genmdl" />
+  <implementation name="IM_disjointover_color4_genmdl" nodedef="ND_disjointover_color4" sourcecode="mx::stdlib::mx_disjointover_color4({{fg}}, {{bg}}, {{mix}})" language="genmdl" />
 
   <!-- <in> -->
-  <implementation name="IM_in_color2_genmdl" nodedef="ND_in_color2" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_in_color2" language="genmdl" />
-  <implementation name="IM_in_color4_genmdl" nodedef="ND_in_color4" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_in_color4" language="genmdl" />
+  <implementation name="IM_in_color2_genmdl" nodedef="ND_in_color2" sourcecode="mx::stdlib::mx_in_color2({{fg}}, {{bg}}, {{mix}})" language="genmdl" />
+  <implementation name="IM_in_color4_genmdl" nodedef="ND_in_color4" sourcecode="mx::stdlib::mx_in_color4({{fg}}, {{bg}}, {{mix}})" language="genmdl" />
 
   <!-- <mask> -->
-  <implementation name="IM_mask_color2_genmdl" nodedef="ND_mask_color2" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_mask_color2" language="genmdl" />
-  <implementation name="IM_mask_color4_genmdl" nodedef="ND_mask_color4" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_mask_color4" language="genmdl" />
+  <implementation name="IM_mask_color2_genmdl" nodedef="ND_mask_color2" sourcecode="mx::stdlib::mx_mask_color2({{fg}}, {{bg}}, {{mix}})" language="genmdl" />
+  <implementation name="IM_mask_color4_genmdl" nodedef="ND_mask_color4" sourcecode="mx::stdlib::mx_mask_color4({{fg}}, {{bg}}, {{mix}})" language="genmdl" />
 
   <!-- <matte> -->
-  <implementation name="IM_matte_color2_genmdl" nodedef="ND_matte_color2" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_matte_color2" language="genmdl" />
-  <implementation name="IM_matte_color4_genmdl" nodedef="ND_matte_color4" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_matte_color4" language="genmdl" />
+  <implementation name="IM_matte_color2_genmdl" nodedef="ND_matte_color2" sourcecode="float2({{fg}}.x*{{fg}}.y + {{bg}}.x*(1.0-{{fg}}.y), {{fg}}.y + ({{bg}}.y*(1.0-{{fg}}.y))) * {{mix}} + ({{bg}} * (1.0-{{mix}}))" language="genmdl" />
+  <implementation name="IM_matte_color4_genmdl" nodedef="ND_matte_color4" sourcecode="color4({{fg}}.rgb*{{fg}}.a + {{bg}}.rgb*(1.0-{{fg}}.a), {{fg}}.a + ({{bg}}.a*(1.0-{{fg}}.a))) * {{mix}} + ({{bg}} * (1.0-{{mix}}))" language="genmdl" />
 
   <!-- <out> -->
-  <implementation name="IM_out_color2_genmdl" nodedef="ND_out_color2" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_out_color2" language="genmdl" />
-  <implementation name="IM_out_color4_genmdl" nodedef="ND_out_color4" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_out_color4" language="genmdl" />
+  <implementation name="IM_out_color2_genmdl" nodedef="ND_out_color2" sourcecode="mx::stdlib::mx_out_color2({{fg}}, {{bg}}, {{mix}})" language="genmdl" />
+  <implementation name="IM_out_color4_genmdl" nodedef="ND_out_color4" sourcecode="mx::stdlib::mx_out_color4({{fg}}, {{bg}}, {{mix}})" language="genmdl" />
 
   <!-- <over> -->
-  <implementation name="IM_over_color2_genmdl" nodedef="ND_over_color2" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_over_color2" language="genmdl" />
-  <implementation name="IM_over_color4_genmdl" nodedef="ND_over_color4" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_over_color4" language="genmdl" />
+  <implementation name="IM_over_color2_genmdl" nodedef="ND_over_color2" sourcecode="mx::stdlib::mx_over_color2({{fg}}, {{bg}}, {{mix}})" language="genmdl" />
+  <implementation name="IM_over_color4_genmdl" nodedef="ND_over_color4" sourcecode="mx::stdlib::mx_over_color4({{fg}}, {{bg}}, {{mix}})" language="genmdl" />
 
   <!-- <inside> -->
-  <implementation name="IM_inside_float_genmdl" nodedef="ND_inside_float" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_inside_float" language="genmdl" />
-  <implementation name="IM_inside_color2_genmdl" nodedef="ND_inside_color2" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_inside_color2" language="genmdl" />
-  <implementation name="IM_inside_color3_genmdl" nodedef="ND_inside_color3" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_inside_color3" language="genmdl" />
-  <implementation name="IM_inside_color4_genmdl" nodedef="ND_inside_color4" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_inside_color4" language="genmdl" />
+  <implementation name="IM_inside_float_genmdl" nodedef="ND_inside_float" sourcecode="{{in}} * {{mask}}" language="genmdl" />
+  <implementation name="IM_inside_color2_genmdl" nodedef="ND_inside_color2" sourcecode="{{in}} * {{mask}}" language="genmdl" />
+  <implementation name="IM_inside_color3_genmdl" nodedef="ND_inside_color3" sourcecode="{{in}} * {{mask}}" language="genmdl" />
+  <implementation name="IM_inside_color4_genmdl" nodedef="ND_inside_color4" sourcecode="mx_multiply({{in}}, {{mask}})" language="genmdl" />
 
   <!-- <outside> -->
-  <implementation name="IM_outside_float_genmdl" nodedef="ND_outside_float" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_outside_float" language="genmdl" />
-  <implementation name="IM_outside_color2_genmdl" nodedef="ND_outside_color2" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_outside_color2" language="genmdl" />
-  <implementation name="IM_outside_color3_genmdl" nodedef="ND_outside_color3" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_outside_color3" language="genmdl" />
-  <implementation name="IM_outside_color4_genmdl" nodedef="ND_outside_color4" file="stdlib/genmdl/materialx/stdlib.mdl" function="mx_outside_color4" language="genmdl" />
+  <implementation name="IM_outside_float_genmdl" nodedef="ND_outside_float" sourcecode="{{in}} * (1.0 - {{mask}})" language="genmdl" />
+  <implementation name="IM_outside_color2_genmdl" nodedef="ND_outside_color2" sourcecode="{{in}} * (1.0 - {{mask}})" language="genmdl" />
+  <implementation name="IM_outside_color3_genmdl" nodedef="ND_outside_color3" sourcecode="{{in}} * (1.0 - {{mask}})" language="genmdl" />
+  <implementation name="IM_outside_color4_genmdl" nodedef="ND_outside_color4" sourcecode="mx_multiply({{in}}, 1.0 - {{mask}})" language="genmdl" />
 
   <!-- <mix> -->
   <implementation name="IM_mix_float_genmdl" nodedef="ND_mix_float" sourcecode="math::lerp({{bg}}, {{fg}}, {{mix}})" language="genmdl"/>

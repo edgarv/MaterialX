@@ -91,9 +91,13 @@ export float4 mk_float4( color4 v) {
 }
 
 export color4 mx_add(      color4 v1, color4 v2) { return color4(v1.rgb + v2.rgb, v1.a + v2.a); }
+export color4 mx_add(      color4 v1,  float v2) { return color4(v1.rgb + v2    , v1.a + v2  ); }
 export color4 mx_subtract( color4 v1, color4 v2) { return color4(v1.rgb - v2.rgb, v1.a - v2.a); }
+export color4 mx_subtract( color4 v1,  float v2) { return color4(v1.rgb - v2    , v1.a - v2  ); }
 export color4 mx_multiply( color4 v1, color4 v2) { return color4(v1.rgb * v2.rgb, v1.a * v2.a); }
+export color4 mx_multiply( color4 v1,  float v2) { return color4(v1.rgb * v2    , v1.a * v2  ); }
 export color4 mx_divide(   color4 v1, color4 v2) { return color4(v1.rgb / v2.rgb, v1.a / v2.a); }
+export color4 mx_divide(   color4 v1,  float v2) { return color4(v1.rgb / v2    , v1.a / v2  ); }
 
 // Parameter Expressions and Function Curves
 // Idea: attach an auxiliary lookup function if an array of frame values is

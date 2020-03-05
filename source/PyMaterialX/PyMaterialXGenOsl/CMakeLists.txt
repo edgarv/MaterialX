@@ -17,9 +17,9 @@ set_target_properties(
 
 target_link_libraries(
     PyMaterialXGenOsl
-    PUBLIC MaterialXGenShader
-           MaterialXGenOsl
-    PRIVATE ${CMAKE_DL_LIBS})
+    PRIVATE MaterialXGenShader
+            MaterialXGenOsl
+            ${CMAKE_DL_LIBS})
 
 install(TARGETS PyMaterialXGenOsl
         LIBRARY DESTINATION "python/MaterialX")

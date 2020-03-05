@@ -17,8 +17,8 @@ set_target_properties(
 
 target_link_libraries(
     PyMaterialXCore
-    PUBLIC MaterialXCore
-    PRIVATE ${CMAKE_DL_LIBS})
+    PRIVATE MaterialXCore
+            ${CMAKE_DL_LIBS})
 
 install(TARGETS PyMaterialXCore
         LIBRARY DESTINATION "python/MaterialX")

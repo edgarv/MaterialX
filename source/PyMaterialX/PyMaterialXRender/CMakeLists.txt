@@ -24,16 +24,16 @@ set_target_properties(
 if(NOT MATERIALX_BUILD_CONTRIB)
   target_link_libraries(
     PyMaterialXRender
-    PUBLIC MaterialXGenShader
-           MaterialXRender
-    PRIVATE ${CMAKE_DL_LIBS})
+    PRIVATE MaterialXGenShader
+            MaterialXRender
+            ${CMAKE_DL_LIBS})
 else()
   target_link_libraries(
     PyMaterialXRender
-    PUBLIC MaterialXGenShader
-           MaterialXRender
-           MaterialXContrib
-    PRIVATE ${CMAKE_DL_LIBS})
+    PRIVATE MaterialXGenShader
+            MaterialXRender
+            MaterialXContrib
+            ${CMAKE_DL_LIBS})
 endif()
 install(TARGETS PyMaterialXRender
         LIBRARY DESTINATION "python/MaterialX")

@@ -17,9 +17,9 @@ set_target_properties(
 
 target_link_libraries(
     PyMaterialXGenArnold
-    PUBLIC MaterialXGenOsl
-           MaterialXGenArnold
-    PRIVATE ${CMAKE_DL_LIBS})
+    PRIVATE MaterialXGenOsl
+            MaterialXGenArnold
+            ${CMAKE_DL_LIBS})
 
 install(TARGETS PyMaterialXGenArnold
         LIBRARY DESTINATION "python/MaterialX")

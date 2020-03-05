@@ -1111,7 +1111,7 @@ void Viewer::loadDocument(const mx::FilePath& filename, mx::DocumentPtr librarie
                         }
                     }
                 }
-                else
+                else if (mat && mat->getMaterialElement())
                 {
                     mx::NodePtr materialNode = mat->getMaterialElement()->asA<mx::Node>();
                     if (materialNode)

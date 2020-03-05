@@ -543,7 +543,7 @@
   <implementation name="IM_smoothstep_color4FA_genmdl" nodedef="ND_smoothstep_color4FA" sourcecode="mx::stdlib::mx_smoothstep_color4FA({{in}}, {{low}}, {{high}})" language="genmdl" />
   <implementation name="IM_smoothstep_vector2FA_genmdl" nodedef="ND_smoothstep_vector2FA" sourcecode="mx::stdlib::mx_smoothstep_vector2FA({{in}}, {{low}}, {{high}})" language="genmdl" />
   <implementation name="IM_smoothstep_vector3FA_genmdl" nodedef="ND_smoothstep_vector3FA" sourcecode="mx::stdlib::mx_smoothstep_vector3FA({{in}}, {{low}}, {{high}})" language="genmdl" />
-  <implementation name="IM_smoothstep_vector4FA_genmdl" nodedef="ND_smoothstep_vector4FA" sourcecode="mx::stdlib::mx_smoothstep_vector4F({{in}}, {{low}}, {{high}})" language="genmdl" />
+  <implementation name="IM_smoothstep_vector4FA_genmdl" nodedef="ND_smoothstep_vector4FA" sourcecode="mx::stdlib::mx_smoothstep_vector4FA({{in}}, {{low}}, {{high}})" language="genmdl" />
 
   <!-- <saturate> implemented by nodegraph -->
 

@@ -77,6 +77,7 @@ export color4 mk_color4( float  r, float g, float b, float a) { return color4(co
 export color4 mk_color4( float3 v) { return color4(color(v.x, v.y, v.z), 1.0); }
 export color4 mk_color4( float4 v) { return color4(color(v.x, v.y, v.z), v.w); }
 export color4 mk_color4( color  v) { return color4(v, 1.0); }
+export color4 mk_color4( color  v, float a) { return color4(v, a); }
 export color  mk_color3( float  r, float g, float b) { return color(r, g, b); }
 export color  mk_color3( float  v) { return color(v); }
 export color  mk_color3( float2 v) { return color(v.x, v.y, 0.0); }

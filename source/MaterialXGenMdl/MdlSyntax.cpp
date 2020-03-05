@@ -125,7 +125,8 @@ class MdlColor4TypeSyntax : public AggregateTypeSyntax
 {
 public:
     MdlColor4TypeSyntax() :
-        AggregateTypeSyntax("color4", "mk_color4(0.0)", "mk_color4(0.0)")
+        AggregateTypeSyntax("color4", "mk_color4(0.0)", "mk_color4(0.0)", 
+            EMPTY_STRING, EMPTY_STRING, MdlSyntax::COLOR4_MEMBERS)
     {}
 
     string getValue(const Value& value, bool /*uniform*/) const override
@@ -183,6 +184,8 @@ const StringVec MdlSyntax::VECTOR2_MEMBERS = { ".x", ".y" };
 const StringVec MdlSyntax::VECTOR3_MEMBERS = { ".x", ".y", ".z" };
 const StringVec MdlSyntax::VECTOR4_MEMBERS = { ".x", ".y", ".z", ".w" };
 const StringVec MdlSyntax::COLOR2_MEMBERS = { ".x", ".y" };
+const StringVec MdlSyntax::COLOR3_MEMBERS = { ".x", ".y", ".z" };       // Note the channel names are not important here since we do custom swizzling for color3/color4,
+const StringVec MdlSyntax::COLOR4_MEMBERS = { ".x", ".y", ".z", ".w" }; // but the number of entries must match the number of components in order for getSwizzledValue to work.
 
 const StringVec MdlSyntax::ADDRESSMODE_MEMBERS = { "constant", "clamp", "periodic", "mirror" };
 const StringVec MdlSyntax::COORDINATESPACE_MEMBERS = { "model", "object", "world" };
@@ -284,7 +287,10 @@ MdlSyntax::MdlSyntax()
         std::make_shared<AggregateTypeSyntax>(
             "color",
             "color(0.0)",
-            "color(0.0)")
+            "color(0.0)",
+            EMPTY_STRING,
+            EMPTY_STRING,
+            COLOR3_MEMBERS)
     );
 
     registerTypeSyntax
@@ -522,7 +528,8 @@ string MdlSyntax::getSwizzledVariable(const string& srcName, const TypeDesc* src
             swizzleFunction += it->second;
         }
 
-        return swizzleFunction + "(" + srcName + ")";
+        const TypeSyntax& dstSyntax = getTypeSyntax(dstType);
+        return dstSyntax.getName() + "(" + swizzleFunction + "(" + srcName + "))";
     }
     return Syntax::getSwizzledVariable(srcName, srcType, channels, dstType);
 }

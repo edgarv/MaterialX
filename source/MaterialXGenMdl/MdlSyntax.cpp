@@ -184,8 +184,8 @@ const StringVec MdlSyntax::VECTOR2_MEMBERS = { ".x", ".y" };
 const StringVec MdlSyntax::VECTOR3_MEMBERS = { ".x", ".y", ".z" };
 const StringVec MdlSyntax::VECTOR4_MEMBERS = { ".x", ".y", ".z", ".w" };
 const StringVec MdlSyntax::COLOR2_MEMBERS = { ".x", ".y" };
-const StringVec MdlSyntax::COLOR3_MEMBERS = { ".x", ".y", ".z" };       // Note the channel names are not important here since we do custom swizzling for color3/color4,
-const StringVec MdlSyntax::COLOR4_MEMBERS = { ".x", ".y", ".z", ".w" }; // but the number of entries must match the number of components in order for getSwizzledValue to work.
+const StringVec MdlSyntax::COLOR3_MEMBERS = { ".x", ".y", ".z" };
+const StringVec MdlSyntax::COLOR4_MEMBERS = { ".x", ".y", ".z", ".a" };
 
 const StringVec MdlSyntax::ADDRESSMODE_MEMBERS = { "constant", "clamp", "periodic", "mirror" };
 const StringVec MdlSyntax::COORDINATESPACE_MEMBERS = { "model", "object", "world" };
@@ -507,29 +507,48 @@ string MdlSyntax::getSwizzledVariable(const string& srcName, const TypeDesc* src
 {
     if (srcType == Type::COLOR3 || srcType == Type::COLOR4)
     {
-        string swizzleFunction = "mx::swizzle::";
+        const TypeSyntax& srcSyntax = getTypeSyntax(srcType);
+        const TypeSyntax& dstSyntax = getTypeSyntax(dstType);
+
+        const StringVec& srcMembers = srcSyntax.getMembers();
+
+        StringVec membersSwizzled;
+
         for (size_t i = 0; i < channels.size(); ++i)
         {
             const char ch = channels[i];
-            /* 
-            TODO: Add back support for '0' and '1'
             if (ch == '0' || ch == '1')
             {
                 membersSwizzled.push_back(string(1, ch));
                 continue;
             }
-            */
-            auto it = CHANNELS_TO_XYZW.find(ch);
-            if (it == CHANNELS_TO_XYZW.end())
+
+            auto it = CHANNELS_MAPPING.find(ch);
+            if (it == CHANNELS_MAPPING.end())
             {
                 throw ExceptionShaderGenError("Invalid channel pattern '" + channels + "'.");
             }
 
-            swizzleFunction += it->second;
+            int channelIndex = srcType->getChannelIndex(ch);
+            if (channelIndex < 0 || channelIndex >= static_cast<int>(srcMembers.size()))
+            {
+                throw ExceptionShaderGenError("Given channel index: '" + string(1, ch) + "' in channels pattern is incorrect for type '" + srcType->getName() + "'.");
+            }
+
+            string variable = srcName;
+            if (srcType == Type::COLOR3)
+            {
+                variable = "float3(" + srcName + ")";
+            }
+            else if (channelIndex < 4)
+            {
+                variable = "float3(" + srcName + ".rgb)";
+            }
+
+            membersSwizzled.push_back(variable + srcMembers[channelIndex]);
         }
 
-        const TypeSyntax& dstSyntax = getTypeSyntax(dstType);
-        return dstSyntax.getName() + "(" + swizzleFunction + "(" + srcName + "))";
+        return dstSyntax.getValue(membersSwizzled, false);
     }
     return Syntax::getSwizzledVariable(srcName, srcType, channels, dstType);
 }

@@ -534,6 +534,13 @@ ImagePtr GlslProgram::bindTexture(unsigned int uniformType, int uniformLocation,
                 }
             }
         }
+        else
+        {
+            StringVec errors;
+            const std::string errorType("GLSL texture bind error.");
+            errors.push_back("Cannot load image: " + filePath.asString());
+            throw ExceptionShaderRenderError(errorType, errors);
+        }
         checkErrors();
         return image;
     }

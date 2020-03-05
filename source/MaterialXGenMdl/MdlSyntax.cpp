@@ -540,7 +540,7 @@ string MdlSyntax::getSwizzledVariable(const string& srcName, const TypeDesc* src
             {
                 variable = "float3(" + srcName + ")";
             }
-            else if (channelIndex < 4)
+            else if (channelIndex < 3)
             {
                 variable = "float3(" + srcName + ".rgb)";
             }

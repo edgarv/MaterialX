@@ -284,7 +284,7 @@ ShaderPtr MdlShaderGenerator::generate(const string& name, ElementPtr element, G
     for (size_t i = 0; i < inputs.size(); ++i)
     {
         const ShaderPort* input = inputs[i];
-        if (input->getType() == Type::FILENAME)
+        if (input->getType() == Type::FILENAME && input->getValue() && !input->getValue()->getValueString().empty())
         {
             const string& type = _syntax->getTypeName(input->getType());
             const string value = (input->getValue() ?
@@ -420,14 +420,14 @@ void MdlShaderGenerator::emitShaderInputs(const VariableBlock& inputs, ShaderSta
     {
         const ShaderPort* input = inputs[i];
 
-        // TODO: This is a temporary for for Iray.
+        // TODO: This is a temporary fix for Iray.
         // File texture constructors must be emitted inside the shader body.
-        if (input->getType() == Type::FILENAME)
+        if (input->getType() == Type::FILENAME && input->getValue() && !input->getValue()->getValueString().empty())
         {
             continue;
         }
 
-        const string& qualifier = input->isUniform() ? uniformPrefix : EMPTY_STRING;
+        const string& qualifier = input->isUniform() || input->getType()==Type::FILENAME ? uniformPrefix : EMPTY_STRING;
         const string& type = _syntax->getTypeName(input->getType());
         const string value = (input->getValue() ?
             _syntax->getValue(input->getType(), *input->getValue(), true) :

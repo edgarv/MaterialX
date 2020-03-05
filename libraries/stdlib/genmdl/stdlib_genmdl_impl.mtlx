@@ -626,8 +626,8 @@
   <implementation name="IM_mask_color4_genmdl" nodedef="ND_mask_color4" sourcecode="mx::stdlib::mx_mask_color4({{fg}}, {{bg}}, {{mix}})" language="genmdl" />
 
   <!-- <matte> -->
-  <implementation name="IM_matte_color2_genmdl" nodedef="ND_matte_color2" sourcecode="float2({{fg}}.x*{{fg}}.y + {{bg}}.x*(1.0-{{fg}}.y), {{fg}}.y + ({{bg}}.y*(1.0-{{fg}}.y))) * {{mix}} + ({{bg}} * (1.0-{{mix}}))" language="genmdl" />
-  <implementation name="IM_matte_color4_genmdl" nodedef="ND_matte_color4" sourcecode="color4({{fg}}.rgb*{{fg}}.a + {{bg}}.rgb*(1.0-{{fg}}.a), {{fg}}.a + ({{bg}}.a*(1.0-{{fg}}.a))) * {{mix}} + ({{bg}} * (1.0-{{mix}}))" language="genmdl" />
+  <implementation name="IM_matte_color2_genmdl" nodedef="ND_matte_color2" sourcecode="mx::stdlib::mx_matte_color2({{fg}}, {{bg}}, {{mix}})" language="genmdl" />
+  <implementation name="IM_matte_color4_genmdl" nodedef="ND_matte_color4" sourcecode="mx::stdlib::mx_matte_color4({{fg}}, {{bg}}, {{mix}})" language="genmdl" />
 
   <!-- <out> -->
   <implementation name="IM_out_color2_genmdl" nodedef="ND_out_color2" sourcecode="mx::stdlib::mx_out_color2({{fg}}, {{bg}}, {{mix}})" language="genmdl" />

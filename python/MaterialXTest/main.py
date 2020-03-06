@@ -53,6 +53,16 @@ class TestMaterialX(unittest.TestCase):
             self.assertTrue(newValue == value)
             self.assertTrue(mx.getTypeString(newValue) == typeString)
 
+    def assertValid(self, doc, msg=None):
+        """Helper to assert that a MaterialX document instance is valid."""
+        valid, desc = doc.validate()
+        if msg is None or len(msg) == 0:
+            msg = "Invalid MaterialX document"
+        if desc is not None and len(desc) > 0:
+            msg = "{} : {}".format(msg, desc)
+        if not valid:
+            self.fail(msg)
+
     def test_Vectors(self):
         v1 = mx.Vector3(1, 2, 3)
         v2 = mx.Vector3(2, 4, 6)
@@ -222,7 +232,7 @@ class TestMaterialX(unittest.TestCase):
         self.assertTrue(custom.getParameterValue('octaves') == 5)
 
         # Validate the document.
-        self.assertTrue(doc.validate()[0])
+        self.assertValid(doc)
 
         # Test scoped attributes.
         nodeGraph.setFilePrefix('folder/')
@@ -362,7 +372,7 @@ class TestMaterialX(unittest.TestCase):
         output.setConnectedNode(mix)
 
         # Validate the document.
-        self.assertTrue(doc.validate()[0])
+        self.assertValid(doc)
 
         # Traverse the document tree (implicit iterator).
         nodeCount = 0
@@ -440,7 +450,7 @@ class TestMaterialX(unittest.TestCase):
         self.assertFalse(doc.validate()[0])
         multiply.setConnectedNode('in2', constant)
         self.assertFalse(output.hasUpstreamCycle())
-        self.assertTrue(doc.validate()[0])
+        self.assertValid(doc)
 
         # Create and detect a loop.
         contrast.setConnectedNode('in', contrast)
@@ -448,7 +458,7 @@ class TestMaterialX(unittest.TestCase):
         self.assertFalse(doc.validate()[0])
         contrast.setConnectedNode('in', image2)
         self.assertFalse(output.hasUpstreamCycle())
-        self.assertTrue(doc.validate()[0])
+        self.assertValid(doc)
 
     def test_ReadXml(self):
         # Read the standard library.
@@ -462,7 +472,7 @@ class TestMaterialX(unittest.TestCase):
         for filename in _exampleFilenames:
             doc = mx.createDocument()
             mx.readFromXmlFile(doc, filename, _searchPath)
-            self.assertTrue(doc.validate()[0], filename + ' is not valid.')
+            self.assertValid(doc, filename + ' is not valid')
 
             # Copy the document.
             copiedDoc = doc.copy()
@@ -508,7 +518,7 @@ class TestMaterialX(unittest.TestCase):
             doc2 = doc.copy()
             for lib in libs:
                 doc2.importLibrary(lib)
-            self.assertTrue(doc2.validate()[0])
+            self.assertValid(doc2)
 
         # Read the same document twice, and verify that duplicate elements
         # are skipped.

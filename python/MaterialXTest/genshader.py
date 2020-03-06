@@ -1,4 +1,5 @@
 import os
+import tempfile
 import unittest
 
 import MaterialX as mx
@@ -92,10 +93,9 @@ class TestGenShader(unittest.TestCase):
         self.assertTrue(outputs.size() == 1)
         self.assertTrue(outputs[0].getName() == output.getName())
 
-        file = open(shader.getName() + "_complete.osl", "w+")
-        file.write(shader.getSourceCode(PIXEL_STAGE))
-        file.close()
-        os.remove(shader.getName() + "_complete.osl");
+        # shader.getName() + "_complete.osl
+        with tempfile.TemporaryFile('w+') as file:
+            file.write(shader.getSourceCode(PIXEL_STAGE))
 
         context.getOptions().shaderInterfaceType = int(ShaderInterfaceType.SHADER_INTERFACE_REDUCED);
         shader = shadergen.generate(exampleName, output, context);
@@ -110,10 +110,9 @@ class TestGenShader(unittest.TestCase):
         self.assertTrue(outputs.size() == 1)
         self.assertTrue(outputs[0].getName() == output.getName())
 
-        file = open(shader.getName() + "_reduced.osl", "w+")
-        file.write(shader.getSourceCode(PIXEL_STAGE))
-        file.close()
-        os.remove(shader.getName() + "_reduced.osl");
+        # shader.getName() + "_reduced.osl
+        with tempfile.TemporaryFile('w+') as file:
+            file.write(shader.getSourceCode(PIXEL_STAGE))
 
 if __name__ == '__main__':
     unittest.main()

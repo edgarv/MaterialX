@@ -156,6 +156,19 @@ export state::coordinate_space mx_map_space( mx_coordinatespace_type space) {
     }
 }
 
+// Helper function mapping MaterialX coordinate space strings to MDL coordinate spaces
+export state::coordinate_space mx_map_space( string space) {
+    if (space == "world") {
+        return state::coordinate_world;
+    }
+    else if (space == "object") {
+        return state::coordinate_object;
+    }
+    else {
+        return state::coordinate_internal;
+    }
+}
+
 // Support return type structures for the separate[234] types
 export struct mx_separate2_color2_type  { float outr = 0.0; float outg = 0.0; };
 export struct mx_separate2_vector2_type { float outx = 0.0; float outy = 0.0; };

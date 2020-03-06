@@ -2115,8 +2115,8 @@ export color4 mx_max_color4(
 
 export float3 mx_transformpoint_vector3(
 	float3 mxp_in = float3(0.0, 0.0, 0.0),
-	uniform mx_coordinatespace_type mxp_fromspace = mx_coordinatespace_type(mx_coordinatespace_type_model),
-	uniform mx_coordinatespace_type mxp_tospace = mx_coordinatespace_type(mx_coordinatespace_type_model)
+	uniform string mxp_fromspace = "object",
+	uniform string mxp_tospace = "world"
 )
 	[[
 		anno::description("Node Group: math")
@@ -2129,8 +2129,8 @@ export float3 mx_transformpoint_vector3(
 
 export float3 mx_transformvector_vector3(
 	float3 mxp_in = float3(0.0, 0.0, 0.0),
-	uniform mx_coordinatespace_type mxp_fromspace = mx_coordinatespace_type(mx_coordinatespace_type_model),
-	uniform mx_coordinatespace_type mxp_tospace = mx_coordinatespace_type(mx_coordinatespace_type_model)
+	uniform string mxp_fromspace = "object",
+	uniform string mxp_tospace = "world"
 )
 	[[
 		anno::description("Node Group: math")
@@ -2143,8 +2143,8 @@ export float3 mx_transformvector_vector3(
 
 export float3 mx_transformnormal_vector3(
 	float3 mxp_in = float3(0.0, 0.0, 1.0),
-	uniform mx_coordinatespace_type mxp_fromspace = mx_coordinatespace_type(mx_coordinatespace_type_model),
-	uniform mx_coordinatespace_type mxp_tospace = mx_coordinatespace_type(mx_coordinatespace_type_model)
+	uniform string mxp_fromspace = "object",
+	uniform string mxp_tospace = "world"
 )
 	[[
 		anno::description("Node Group: math")
@@ -3280,6 +3280,33 @@ export color4 mx_mask_color4(
 	color rgb = mxp_bg.rgb*mxp_fg.a * mxp_mix + mxp_bg.rgb * (1.0-mxp_mix);
 	float   a = mxp_bg.a  *mxp_fg.a * mxp_mix + mxp_bg.a   * (1.0-mxp_mix);
 	return color4(rgb,a);
+}
+
+export float2 mx_matte_color2(
+	float2 mxp_fg = float2(0.0),
+	float2 mxp_bg = float2(0.0),
+	float mxp_mix = 1.0
+)
+	[[
+		anno::description("Node Group: compositing")
+	]]
+{
+	float2 v = float2(mxp_fg.x*mxp_fg.y + mxp_bg.x*(1.0-mxp_fg.y), mxp_fg.y + mxp_bg.y*(1.0-mxp_fg.y));
+	return v * mxp_mix + mxp_bg * (1.0-mxp_mix);
+}
+
+export color4 mx_matte_color4(
+	color4 mxp_fg = mk_color4(0.0, 0.0, 0.0, 0.0),
+	color4 mxp_bg = mk_color4(0.0, 0.0, 0.0, 0.0),
+	float mxp_mix = 1.0
+)
+	[[
+		anno::description("Node Group: compositing")
+	]]
+{
+	color rgb = (mxp_fg.rgb*mxp_fg.a + mxp_bg.rgb*(1.0-mxp_fg.a)) * mxp_mix  +  mxp_bg.rgb * (1.0-mxp_mix);
+	float   a = (mxp_fg.a + mxp_bg.a*(1.0-mxp_fg.a))              * mxp_mix  +  mxp_bg.a   * (1.0-mxp_mix);
+	return color4(rgb, a);
 }
 
 export float2 mx_out_color2(

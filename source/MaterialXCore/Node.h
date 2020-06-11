@@ -58,8 +58,9 @@ class Node : public InterfaceElement
     /// @name Connections
     /// @{
 
-    /// Set the Node connected to the given input, creating a child element
-    /// for the input if needed.
+    /// Set the node to which the given input is connected, creating a
+    /// child input if needed.  If the node argument is null, then any
+    /// existing node connection on the input will be cleared.
     void setConnectedNode(const string& inputName, NodePtr node);
 
     /// Return the Node connected to the given input.  If the given input is
@@ -143,6 +144,9 @@ class Node : public InterfaceElement
         return getNodeDef(target);
     }
 
+    /// Add an input based on the corresponding input for the associated node definition.
+    ValueElementPtr addInputFromNodeDef(const string& name);
+
     /// @}
     /// @name Validation
     /// @{
@@ -181,7 +185,13 @@ class GraphElement : public InterfaceElement
     /// @return A shared pointer to the new Node.
     NodePtr addNode(const string& category,
                     const string& name = EMPTY_STRING,
-                    const string& type = DEFAULT_TYPE_STRING);
+                    const string& type = DEFAULT_TYPE_STRING)
+    {
+        NodePtr node = addChild<Node>(name);
+        node->setCategory(category);
+        node->setType(type);
+        return node;
+    }
 
     /// Add a Node that is an instance of the given NodeDef.
     NodePtr addNodeInstance(ConstNodeDefPtr nodeDef, const string& name = EMPTY_STRING)
@@ -309,6 +319,20 @@ class NodeGraph : public GraphElement
     ///    by the given target name.
     ConstNodeDefPtr getDeclaration(const string& target = EMPTY_STRING) const override;
 
+    /// Add a new interface to an existing NodeDef associated with this NodeGraph.
+    /// @param inputPath Path to Input or Parameter to declare as an interface.
+    /// @param interfaceName Name of interface.
+    void addInterface(const string& inputPath, const string& interfaceName);
+
+    /// Remove an interface from an existing NodeDef associated with this NodeGraph.
+    /// @param inputPath Path to Input or Parameter to remove interface from.
+    void removeInterface(const string& inputPath);
+
+    /// Rename an interface on an existing NodeDef associated with this NodeGraph.
+    /// @param inputPath Path to Input or Parameter to reinterface.
+    /// @param interfaceName Name of interface.
+    void renameInterface(const string& inputPath, const string& interfaceName);
+
     /// @}
     /// @name Validation
     /// @{
@@ -321,6 +345,9 @@ class NodeGraph : public GraphElement
 
   public:
     static const string CATEGORY;
+
+  private:
+    ValueElementPtr getChildWithInterface(const string& childPath);
 };
 
 /// @class Backdrop
@@ -334,41 +361,90 @@ class Backdrop : public Element
     }
     virtual ~Backdrop() { }
 
-    /// Set the comma-separated list of nodes that this backdrop contains.
-    void setContains(const string& contains)
+    /// @name Contains String
+    /// @{
+
+    /// Set the contains string for this backdrop.
+    void setContainsString(const string& contains)
     {
         setAttribute(CONTAINS_ATTRIBUTE, contains);
     }
 
-    /// Return the comma-separated list of nodes that this backdrop contains.
-    string getContains() const
+    /// Return true if this backdrop has a contains string.
+    bool hasContainsString() const
+    {
+        return hasAttribute(CONTAINS_ATTRIBUTE);
+    }
+
+    /// Return the contains string for this backdrop.
+    string getContainsString() const
     {
         return getAttribute(CONTAINS_ATTRIBUTE);
     }
 
-    /// Set the width of the backdrop when drawn in a UI.
+    /// @}
+    /// @name Width
+    /// @{
+
+    /// Set the width attribute of the backdrop.
     void setWidth(float width)
     {
         setTypedAttribute<float>(WIDTH_ATTRIBUTE, width);
     }
 
-    /// Return the width of the backdrop when drawn in a UI.
+    /// Return true if this backdrop has a width attribute.
+    bool hasWidth() const
+    {
+        return hasAttribute(WIDTH_ATTRIBUTE);
+    }
+
+    /// Return the width attribute of the backdrop.
     float getWidth() const
     {
         return getTypedAttribute<float>(WIDTH_ATTRIBUTE);
     }
 
-    /// Set the height of the backdrop when drawn in a UI.
+    /// @}
+    /// @name Height
+    /// @{
+
+    /// Set the height attribute of the backdrop.
     void setHeight(float height)
     {
         setTypedAttribute<float>(HEIGHT_ATTRIBUTE, height);
     }
 
-    /// Return the height of the backdrop when drawn in a UI.
+    /// Return true if this backdrop has a height attribute.
+    bool hasHeight() const
+    {
+        return hasAttribute(HEIGHT_ATTRIBUTE);
+    }
+
+    /// Return the height attribute of the backdrop.
     float getHeight() const
     {
         return getTypedAttribute<float>(HEIGHT_ATTRIBUTE);
     }
+
+    /// @}
+    /// @name Utility
+    /// @{
+
+    /// Set the vector of elements that this backdrop contains.
+    void setContainsElements(const vector<ConstTypedElementPtr>& nodes);
+
+    /// Return the vector of elements that this backdrop contains.
+    vector<TypedElementPtr> getContainsElements() const;
+
+    /// @}
+    /// @name Validation
+    /// @{
+
+    /// Validate that the given element tree, including all descendants, is
+    /// consistent with the MaterialX specification.
+    bool validate(string* message = nullptr) const override;
+
+    /// @}
 
   public:
     static const string CATEGORY;

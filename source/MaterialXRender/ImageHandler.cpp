@@ -40,7 +40,7 @@ const string ImageLoader::TXR_EXTENSION = "txr";
 ImageHandler::ImageHandler(ImageLoaderPtr imageLoader)
 {
     addLoader(imageLoader);
-    _zeroImage = Image::createConstantColor(1, 1, Color4(0.0f));
+    _zeroImage = createUniformImage(1, 1, Color4(0.0f));
 }
 
 void ImageHandler::addLoader(ImageLoaderPtr loader)
@@ -94,14 +94,15 @@ bool ImageHandler::saveImage(const FilePath& filePath,
 
 ImagePtr ImageHandler::acquireImage(const FilePath& filePath, bool, const Color4* fallbackColor, string* message)
 {
-    FilePath foundFilePath =  _searchPath.find(filePath);
-    string extension = foundFilePath.getExtension();
-    ImageLoaderMap::reverse_iterator iter;
-    for (iter = _imageLoaders.rbegin(); iter != _imageLoaders.rend(); ++iter)
+    FilePath foundFilePath = _searchPath.find(filePath);
+    string extension = stringToLower(foundFilePath.getExtension());
+    bool extensionSupported = false;
+    for (ImageLoaderMap::reverse_iterator iter = _imageLoaders.rbegin(); iter != _imageLoaders.rend(); ++iter)
     {
         ImageLoaderPtr loader = iter->second;
         if (loader && loader->supportedExtensions().count(extension))
         {
+            extensionSupported = true;
             ImagePtr image = loader->loadImage(foundFilePath);
             if (image)
             {
@@ -113,11 +114,22 @@ ImagePtr ImageHandler::acquireImage(const FilePath& filePath, bool, const Color4
 
     if (message && !filePath.isEmpty())
     {
-        *message = string("Error loading image: ") + filePath.asString();
+        if (!foundFilePath.exists())
+        {
+            *message = string("Image file not found: ") + filePath.asString();
+        }
+        else if (!extensionSupported)
+        {
+            *message = string("Unsupported image extension: ") + filePath.asString();
+        }
+        else
+        {
+            *message = string("Image loader failed to parse image: ") + filePath.asString();
+        }
     }
     if (fallbackColor)
     {
-        ImagePtr image = Image::createConstantColor(1, 1, *fallbackColor);
+        ImagePtr image = createUniformImage(1, 1, *fallbackColor);
         if (image)
         {
             cacheImage(filePath, image);

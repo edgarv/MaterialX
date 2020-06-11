@@ -9,7 +9,7 @@
 /// @file
 /// Type descriptor for a MaterialX data type.
 
-#include <MaterialXGenShader/Library.h>
+#include <MaterialXCore/Library.h>
 
 namespace MaterialX
 {
@@ -49,6 +49,7 @@ class TypeDesc
         SEMANTIC_CLOSURE,
         SEMANTIC_SHADER,
         SEMANTIC_MATERIAL,
+        SEMANTIC_ENUM,
         SEMANTIC_LAST
     };
 

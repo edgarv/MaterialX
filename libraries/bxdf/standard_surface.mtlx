@@ -84,7 +84,7 @@
       <input name="opacity" type="color3" value="1, 1, 1" uimin="0,0,0" uimax="1,1,1" uiname="Opacity" uifolder="Geometry"
             doc="The opacity of the entire material." />
       <input name="thin_walled" type="boolean" value="false" uiname="Thin Walled" uifolder="Geometry" uiadvanced="true"
-            doc="If tue the surface is double-sided and represents an infinitely thin shell. Suiteable for thin objects such as tree leafs or paper"/>
+            doc="If true the surface is double-sided and represents an infinitely thin shell. Suiteable for thin objects such as tree leafs or paper"/>
       <input name="normal" type="vector3" defaultgeomprop="Nworld" uiname="Normal" uifolder="Geometry"
             doc="Input geometric normal" />
       <input name="tangent" type="vector3"  defaultgeomprop="Tworld" uiname="Tangent Input" uifolder="Geometry"
@@ -106,13 +106,13 @@
       <input name="in1" type="float" nodename="coat_affect_roughness_multiply1" />
       <input name="in2" type="float" interfacename="coat_roughness" />
     </multiply>
-    <mix name="coat_affected_rougness" type="float">
+    <mix name="coat_affected_roughness" type="float">
       <input name="fg" type="float" value="1.0" />
       <input name="bg" type="float" interfacename="specular_roughness" />
       <input name="mix" type="float" nodename="coat_affect_roughness_multiply2" />
     </mix>
-    <roughness_anisotropy name="main_rougness" type="vector2">
-      <input name="roughness" type="float" nodename="coat_affected_rougness" />
+    <roughness_anisotropy name="main_roughness" type="vector2">
+      <input name="roughness" type="float" nodename="coat_affected_roughness" />
       <input name="anisotropy" type="float" interfacename="specular_anisotropy" />
     </roughness_anisotropy>
 
@@ -124,7 +124,7 @@
     <rotate3d name="tangent_rotate" type="vector3">
       <input name="in" type="vector3" interfacename="tangent" />
       <input name="amount" type="float" nodename="tangent_rotate_degree" />
-      <parameter name="axis" type="vector3" interfacename="normal"/>
+      <input name="axis" type="vector3" interfacename="normal"/>
     </rotate3d>
     <normalize name="tangent_rotate_normalize" type="vector3">
       <input name="in" type="vector3" nodename="tangent_rotate" />
@@ -144,7 +144,7 @@
     <rotate3d name="coat_tangent_rotate" type="vector3">
       <input name="in" type="vector3" interfacename="tangent" />
       <input name="amount" type="float" nodename="coat_tangent_rotate_degree" />
-      <parameter name="axis" type="vector3" interfacename="coat_normal"/>
+      <input name="axis" type="vector3" interfacename="coat_normal"/>
     </rotate3d>
     <normalize name="coat_tangent_rotate_normalize" type="vector3">
       <input name="in" type="vector3" nodename="coat_tangent_rotate" />
@@ -189,8 +189,11 @@
       <input name="color" type="color3" interfacename="sheen_color" />
       <input name="roughness" type="float" interfacename="sheen_roughness" />
       <input name="normal" type="vector3" interfacename="normal" />
-      <input name="base" type="BSDF" nodename="diffuse_bsdf" />
     </sheen_brdf>
+    <layer name="diffuse_layer" type="BSDF">
+      <input name="top" type="BSDF" nodename="sheen_bsdf" />
+      <input name="base" type="BSDF" nodename="diffuse_bsdf" />
+    </layer>
 
     <!-- Subsurface Layer -->
     <diffuse_btdf name="translucent_bsdf" type="BSDF">
@@ -222,7 +225,7 @@
     </mix>
     <mix name="subsurface_mix" type="BSDF">
       <input name="fg" type="BSDF" nodename="selected_subsurface_bsdf" />
-      <input name="bg" type="BSDF" nodename="sheen_bsdf" />
+      <input name="bg" type="BSDF" nodename="diffuse_layer" />
       <input name="mix" type="float" interfacename="subsurface" />
     </mix>
 
@@ -231,7 +234,7 @@
       <input name="weight" type="float" value="1.0" />
       <input name="tint" type="color3" interfacename="transmission_color" />
       <input name="ior" type="float" interfacename="specular_IOR" />
-      <input name="roughness" type="vector2" nodename="main_rougness" />
+      <input name="roughness" type="vector2" nodename="main_roughness" />
       <input name="normal" type="vector3" interfacename="normal" />
       <input name="tangent" type="vector3" nodename="main_tangent" />
       <parameter name="distribution" type="string" value="ggx" />
@@ -248,12 +251,15 @@
       <input name="weight" type="float" interfacename="specular" />
       <input name="tint" type="color3" interfacename="specular_color" />
       <input name="ior" type="float" interfacename="specular_IOR" />
-      <input name="roughness" type="vector2" nodename="main_rougness" />
+      <input name="roughness" type="vector2" nodename="main_roughness" />
       <input name="normal" type="vector3" interfacename="normal" />
       <input name="tangent" type="vector3" nodename="main_tangent" />
       <parameter name="distribution" type="string" value="ggx" />
-      <input name="base" type="BSDF" nodename="transmission_mix" />
     </dielectric_brdf>
+    <layer name="specular_layer" type="BSDF">
+      <input name="top" type="BSDF" nodename="specular_bsdf" />
+      <input name="base" type="BSDF" nodename="transmission_mix" />
+    </layer>
 
     <!-- Metal Layer -->
     <multiply name="metal_reflectivity" type="color3">
@@ -268,14 +274,14 @@
       <input name="weight" type="float" value="1.0" />
       <input name="reflectivity" type="color3" nodename="metal_reflectivity"/>
       <input name="edge_color" type="color3" nodename="metal_edgecolor"/>
-      <input name="roughness" type="vector2" nodename="main_rougness" />
+      <input name="roughness" type="vector2" nodename="main_roughness" />
       <input name="normal" type="vector3" interfacename="normal" />
       <input name="tangent" type="vector3" nodename="main_tangent" />
       <parameter name="distribution" type="string" value="ggx" />
     </conductor_brdf>
     <mix name="metalness_mix" type="BSDF">
       <input name="fg" type="BSDF" nodename="metal_bsdf" />
-      <input name="bg" type="BSDF" nodename="specular_bsdf" />
+      <input name="bg" type="BSDF" nodename="specular_layer" />
       <input name="mix" type="float" interfacename="metalness" />
     </mix>
 
@@ -301,8 +307,11 @@
       <input name="normal" type="vector3" interfacename="coat_normal" />
       <input name="tangent" type="vector3" nodename="coat_tangent" />
       <parameter name="distribution" type="string" value="ggx" />
-      <input name="base" type="BSDF" nodename="metalness_mix_attenuated" />
     </dielectric_brdf>
+    <layer name="coat_layer" type="BSDF">
+      <input name="top" type="BSDF" nodename="coat_bsdf" />
+      <input name="base" type="BSDF" nodename="metalness_mix_attenuated" />
+    </layer>
 
     <!-- Emission Layer -->
     <multiply name="emission_weight" type="color3">
@@ -339,7 +348,7 @@
       <input name="in" type="color3" interfacename="opacity" />
     </luminance>
     <surface name="standard_surface_constructor" type="surfaceshader">
-      <input name="bsdf" type="BSDF" nodename="coat_bsdf" />
+      <input name="bsdf" type="BSDF" nodename="coat_layer" />
       <input name="edf" type="EDF" nodename="emission_edf" />
       <input name="opacity" type="float" nodename="opacity_luminance" channels="r"/>
     </surface>

@@ -21,7 +21,7 @@
       <!-- Comma separated list of "language"_"target" specifiers to indicate which
            code generators to use.
        -->
-      <parameter name="languageAndTargets" type="string" value="genglsl_glsl400,genosl_vanilla,genglsl_ogsfx,genglsl_ogsxml" />
+      <parameter name="languageAndTargets" type="string" value="genmdl_mdl,genglsl_glsl400,genosl_vanilla,genglsl_ogsfx,genglsl_ogsxml" />
 
       <!-- Check the count of number of implementations used for a given generator
         -->
@@ -42,6 +42,9 @@
 
       <!-- Perform rendering validation test -->
       <parameter name="renderImages" type="boolean" value="true" />
+
+      <!-- Rendered image size if render validation test enabled -->
+      <parameter name="renderSize" type="vector2" value="512, 512" />
 
       <!-- Perform saving of image. Can only be disabled for GLSL tests -->
       <parameter name="saveImages" type="boolean" value="true" />
@@ -92,11 +95,8 @@
       <!-- External testing: extra comma separated list of test root paths -->
       <parameter name="externalTestPaths" type="string" value="" />
 
-      <!-- Desired major version to upgrade to if possible -->
-      <parameter name="desiredMajorVersion" type="integer" value="1" />
-
-      <!-- Desired minor version to upgrade to if possible -->
-      <parameter name="desiredMinorVersion" type="integer" value="38" />
+      <!-- Test prototype functionality for future versions of MaterialX -->
+      <parameter name="applyFutureUpdates" type="boolean" value="true" />
 
    </nodedef>
 </materialx>

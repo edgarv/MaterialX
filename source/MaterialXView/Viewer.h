@@ -12,7 +12,7 @@
 
 #include <MaterialXGenGlsl/GlslShaderGenerator.h>
 
-#include <MaterialXGenShader/UnitConverter.h>
+#include <MaterialXCore/Unit.h>
 
 namespace mx = MaterialX;
 namespace ng = nanogui;
@@ -22,11 +22,20 @@ class Viewer : public ng::Screen
   public:
     Viewer(const std::string& materialFilename,
            const std::string& meshFilename,
+           const mx::Vector3& meshRotation,
+           float meshScale,
+           const mx::Vector3& cameraPosition,
+           const mx::Vector3& cameraTarget,
+           float cameraViewAngle,
+           const std::string& envRadiancePath,
+           mx::HwSpecularEnvironmentMethod specularEnvironmentMethod,
+           float lightRotation,
            const mx::FilePathVec& libraryFolders,
            const mx::FileSearchPath& searchPath,
            const DocumentModifiers& modifiers,
-           mx::HwSpecularEnvironmentMethod specularEnvironmentMethod,
-           const std::string& envRadiancePath,
+           int screenWidth,
+           int screenHeight,
+           const mx::Color3& screenColor,
            int multiSampleCount);
     ~Viewer() { }
 
@@ -36,6 +45,11 @@ class Viewer : public ng::Screen
     bool scrollEvent(const ng::Vector2i& p, const ng::Vector2f& rel) override;
     bool mouseMotionEvent(const ng::Vector2i& p, const ng::Vector2i& rel, int button, int modifiers) override;
     bool mouseButtonEvent(const ng::Vector2i& p, int button, bool down, int modifiers) override;
+
+    void renderFrame();
+    mx::ImagePtr getFrameImage();
+    mx::ImagePtr renderWedge();
+    void bakeTextures();
 
     ng::Window* getWindow() const
     {
@@ -82,18 +96,14 @@ class Viewer : public ng::Screen
         return _imageHandler;
     }
 
-    bool showAdvancedProperties() const
-    {
-        return _showAdvancedProperties;
-    }
-
   private:
+    void initContext(mx::GenContext& context);
     void loadEnvironmentLight();
     void applyDirectLights(mx::DocumentPtr doc);
     void loadDocument(const mx::FilePath& filename, mx::DocumentPtr libraries);
     void reloadShaders();
     void loadStandardLibraries();
-    void saveShaderSource();
+    void saveShaderSource(mx::GenContext& context);
     void loadShaderSource();
     void saveDotFiles();
 
@@ -125,6 +135,9 @@ class Viewer : public ng::Screen
     /// Update the current shadow map.
     void updateShadowMap();
 
+    /// Update the directional albedo table.
+    void updateAlbedoTable();
+
     /// Check for any OpenGL errors that have been encountered.
     void checkGlErrors(const std::string& context);
 
@@ -132,21 +145,23 @@ class Viewer : public ng::Screen
     ng::Window* _window;
     ng::Arcball _arcball;
 
-    mx::Vector3 _eye;
-    mx::Vector3 _center;
-    mx::Vector3 _up;
-    float _viewAngle;
-    float _nearDist;
-    float _farDist;
+    mx::Vector3 _meshTranslation;
+    mx::Vector3 _meshRotation;
+    float _meshScale;
 
-    float _modelZoom;
-    mx::Vector3 _modelTranslation;
+    mx::Vector3 _cameraPosition;
+    mx::Vector3 _cameraTarget;
+    mx::Vector3 _cameraUp;
+    float _cameraViewAngle;
+    float _cameraNearDist;
+    float _cameraFarDist;
 
-    float _userZoom;
+    bool _userCameraEnabled;
     mx::Vector3 _userTranslation;
     mx::Vector3 _userTranslationStart;
     bool _userTranslationActive;
     ng::Vector2i _userTranslationPixel;
+    float _userScale;
 
     // Document management
     mx::FilePathVec _libraryFolders;
@@ -160,6 +175,7 @@ class Viewer : public ng::Screen
     mx::FilePath _envRadiancePath;
     mx::FilePath _lightRigFilename;
     mx::DocumentPtr _lightRigDoc;
+    float _lightRotation;
     bool _directLighting;
     bool _indirectLighting;
 
@@ -172,7 +188,6 @@ class Viewer : public ng::Screen
     // Shadow mapping
     MaterialPtr _shadowMaterial;
     MaterialPtr _shadowBlurMaterial;
-    mx::GLFrameBufferPtr _shadowFramebuffer;
     mx::ImagePtr _shadowMap;
     unsigned int _shadowSoftness;
 
@@ -210,8 +225,14 @@ class Viewer : public ng::Screen
     mx::GeometryHandlerPtr _envGeometryHandler;
     MaterialPtr _envMaterial;
 
-    // Shader generator
+    // Shader generator contexts
     mx::GenContext _genContext;
+#if MATERIALX_BUILD_GEN_OSL
+    mx::GenContext _genContextOsl;
+#endif
+#if MATERIALX_BUILD_GEN_MDL
+    mx::GenContext _genContextMdl;
+#endif
 
     // Unit registry
     mx::UnitConverterRegistryPtr _unitRegistry;
@@ -230,21 +251,27 @@ class Viewer : public ng::Screen
 
     // Render options
     bool _outlineSelection;
-    mx::HwSpecularEnvironmentMethod _specularEnvironmentMethod;
     int _envSamples;
     bool _drawEnvironment;
-    mx::Matrix44 _envMatrix;
 
-    // Property options
-    bool _showAdvancedProperties;
+    // Frame capture
+    bool _captureRequested;
+    mx::FilePath _captureFilename;
 
-    // Image save
-    bool _captureFrame;
-    mx::FilePath _captureFrameFilename;
+    // Wedge rendering
+    bool _wedgeRequested;
+    mx::FilePath _wedgeFilename;
+    std::string _wedgePropertyName;
+    float _wedgePropertyMin;
+    float _wedgePropertyMax;
+    unsigned int _wedgeImageCount;
 
     // Texture baking
     bool _bakeRequested;
     mx::FilePath _bakeFilename;
 };
+
+extern const mx::Vector3 DEFAULT_CAMERA_POSITION;
+extern const float DEFAULT_CAMERA_VIEW_ANGLE;
 
 #endif // MATERIALXVIEW_VIEWER_H

@@ -8,7 +8,7 @@
 #include <MaterialXGenShader/ShaderNode.h>
 #include <MaterialXGenShader/ShaderStage.h>
 #include <MaterialXGenShader/ShaderGenerator.h>
-#include <MaterialXGenShader/Util.h>
+#include <MaterialXFormat/Util.h>
 
 namespace MaterialX
 {
@@ -29,33 +29,38 @@ void SourceCodeNode::initialize(const InterfaceElement& element, GenContext& con
 
     const Implementation& impl = static_cast<const Implementation&>(element);
 
-    FilePath file = impl.getAttribute("file");
-    if (file.isEmpty())
+    // Get source code from either an attribute or a file.
+    _functionSource = impl.getAttribute("sourcecode");
+    if (_functionSource.empty())
     {
-        throw ExceptionShaderGenError("No source file specified for implementation '" + impl.getName() + "'");
+        FilePath file(impl.getAttribute("file"));
+        file = context.resolveSourceFile(file);
+        _functionSource = readFile(file);
+        if (_functionSource.empty())
+        {
+            throw ExceptionShaderGenError("Failed to get source code from file '" + file.asString() +
+                "' used by implementation '" + impl.getName() + "'");
+        }
     }
-
-    _functionSource = "";
-    _inlined = (file.getExtension() == "inline");
 
     // Find the function name to use
+    // If no function is given the source will be inlined.
     _functionName = impl.getAttribute("function");
-    if (_functionName.empty())
+    _inlined = _functionName.empty();
+    if (!_inlined)
     {
-        // No function given so use nodedef name
-        _functionName = impl.getNodeDefString();
+        // Make sure the function name is valid.
+        string validFunctionName = _functionName;
+        context.getShaderGenerator().getSyntax().makeValidName(validFunctionName);
+        if (_functionName != validFunctionName)
+        {
+            throw ExceptionShaderGenError("Function name '" + _functionName +
+                "' used by implementation '" + impl.getName() + "' is not a valid identifier.");
+        }
     }
-    context.getShaderGenerator().getSyntax().makeValidName(_functionName);
-
-    if (!readFile(context.resolveSourceFile(file), _functionSource))
+    else
     {
-        throw ExceptionShaderGenError("Can't find source file '" + file.asString() +
-                                      "' used by implementation '" + impl.getName() + "'");
-    }
-
-    if (_inlined)
-    {
-        _functionSource.erase(std::remove(_functionSource.begin(), _functionSource.end(), '\n'), _functionSource.end());
+        _functionSource = replaceSubstrings(_functionSource, { { "\n", "" } });
     }
 
     // Set hash using the function name.

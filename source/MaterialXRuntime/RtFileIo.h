@@ -30,22 +30,18 @@ class RtReadOptions
     RtReadOptions();
     ~RtReadOptions() { }
 
-    /// If true, duplicate elements with non-identical content will be skipped;
-    /// otherwise they will trigger an exception.  Defaults to false.
-    bool skipConflictingElements;
-
     /// Filter function type used for filtering elements during read.
     /// If the filter returns false the element will not be read.
     ReadFilter readFilter;
 
-    /// Read look information
+    /// Read look information. The default value is false.
     bool readLookInformation;
 
-    /// The desired major version
-    unsigned int desiredMajorVersion;
+    /// Apply the latest MaterialX feature updates. The default value is true.
+    bool applyFutureUpdates;
 
-    /// The desired minor version
-    unsigned int desiredMinorVersion;
+    /// Validate MaterialX documents read. The default is true.
+    bool validateDocument;
 };
     
 /// @class RtWriteOptions
@@ -62,6 +58,9 @@ class RtWriteOptions
     /// If true, elements with source file markings will be written as
     /// includes rather than explicit data.  Defaults to true.
     bool writeIncludes;
+
+    // If true, writes out nodegraph inputs
+    bool writeNodeGraphInputs;
 
     /// Filter function type used for filtering objects during write.
     /// If the filter returns false the object will not be written.
@@ -132,10 +131,13 @@ public:
     /// will be written to the document.
     void write(const FilePath& documentPath, const RtWriteOptions* writeOptions = nullptr);
 
+    void writeDefinitions(std::ostream& stream, const RtTokenVec& names, const RtWriteOptions* writeOptions = nullptr);
+    void writeDefinitions(const FilePath& documentPath, const RtTokenVec& names, const RtWriteOptions* writeOptions = nullptr);
+
 protected:
     /// Read all contents from one or more libraries.
     /// All MaterialX files found inside the given libraries will be read.
-    void readLibraries(const StringVec& libraryPaths, const FileSearchPath& searchPaths);
+    void readLibraries(const FilePathVec& libraryPaths, const FileSearchPath& searchPaths);
     friend class PvtApi;
 
 private:

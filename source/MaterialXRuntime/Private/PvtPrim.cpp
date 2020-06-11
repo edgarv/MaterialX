@@ -25,38 +25,63 @@ PvtPrim::PvtPrim(const RtTypeInfo* typeInfo, const RtToken& name, PvtPrim* paren
 PvtDataHandle PvtPrim::createNew(const RtTypeInfo* type, const RtToken& name, PvtPrim* parent)
 {
     // Make the name unique.
-    const RtToken primName = parent->makeUniqueName(name);
+    const RtToken primName = parent->makeUniqueChildName(name);
     return PvtDataHandle(new PvtPrim(type, primName, parent));
 }
 
-void PvtPrim::dispose()
+void PvtPrim::dispose(bool state)
 {
-    // Dispose all relationships.
     for (const PvtDataHandle& hnd : _relOrder)
     {
-        hnd->setDisposed();
+        hnd->setDisposed(state);
+    }
+    for (const PvtDataHandle& hnd : _attrOrder)
+    {
+        hnd->setDisposed(state);
+    }
+    for (const PvtDataHandle& hnd : _primOrder)
+    {
+        hnd->asA<PvtPrim>()->dispose(state);
+    }
+    setDisposed(state);
+}
+
+void PvtPrim::destroy()
+{
+    // Disconnect and delete all relationships.
+    for (PvtDataHandle& hnd : _relOrder)
+    {
+        PvtRelationship* rel = hnd->asA<PvtRelationship>();
+        rel->clearTargets();
     }
     _relOrder.clear();
     _relMap.clear();
 
-    // Dispose all attributes.
-    for (const PvtDataHandle& hnd : _attrOrder)
+    // Disconnect and delete all attributes.
+    for (PvtDataHandle& hnd : _attrOrder)
     {
-        hnd->setDisposed();
+        if (hnd->isA<PvtInput>())
+        {
+            hnd->asA<PvtInput>()->clearConnection();
+        }
+        else if (hnd->isA<PvtOutput>())
+        {
+            hnd->asA<PvtOutput>()->clearConnections();
+        }
     }
     _attrOrder.clear();
     _attrMap.clear();
 
-    // Dispose all child prims reqursively.
+    // Destroy all child prims reqursively.
     for (const PvtDataHandle& hnd : _primOrder)
     {
-        hnd->asA<PvtPrim>()->dispose();
+        hnd->asA<PvtPrim>()->destroy();
     }
     _primOrder.clear();
     _primMap.clear();
 
-    // Tag as disposed
-    setDisposed();
+    // Tag as disposed.
+    dispose(true);
 }
 
 PvtRelationship* PvtPrim::createRelationship(const RtToken& name)
@@ -87,7 +112,22 @@ void PvtPrim::removeRelationship(const RtToken& name)
                 break;
             }
         }
-        rel->setDisposed();
+        rel->setDisposed(true);
+        _relMap.erase(name);
+    }
+}
+
+void PvtPrim::renameRelationship(const RtToken& name, const RtToken& newName)
+{
+    if (getRelationship(newName))
+    {
+        throw ExceptionRuntimeError("A relationship named '" + newName.str() + "' already exists in prim '" + getName().str() + "'");
+    }
+    PvtRelationship* rel = getRelationship(name);
+    if (rel)
+    {
+        rel->setName(newName);
+        _relMap[newName] = rel->hnd();
         _relMap.erase(name);
     }
 }
@@ -148,7 +188,22 @@ void PvtPrim::removeAttribute(const RtToken& name)
                 break;
             }
         }
-        attr->setDisposed();
+        attr->setDisposed(true);
+        _attrMap.erase(name);
+    }
+}
+
+void PvtPrim::renameAttribute(const RtToken& name, const RtToken& newName)
+{
+    if (getAttribute(newName))
+    {
+        throw ExceptionRuntimeError("An attribute named '" + newName.str() + "' already exists in prim '" + getName().str() + "'");
+    }
+    PvtAttribute* attr = getAttribute(name);
+    if (attr)
+    {
+        attr->setName(newName);
+        _attrMap[newName] = attr->hnd();
         _attrMap.erase(name);
     }
 }
@@ -163,7 +218,7 @@ RtPrimIterator PvtPrim::getChildren(RtObjectPredicate predicate) const
     return RtPrimIterator(hnd(), predicate);
 }
 
-RtToken PvtPrim::makeUniqueName(const RtToken& name) const
+RtToken PvtPrim::makeUniqueChildName(const RtToken& name) const
 {
     RtToken newName = name;
 

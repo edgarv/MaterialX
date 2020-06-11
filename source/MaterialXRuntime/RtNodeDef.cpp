@@ -12,10 +12,12 @@
 namespace MaterialX
 {
 
-namespace
-{
-    static const RtToken NODE("node");
-}
+RtToken RtNodeDef::NODE("node");
+RtToken RtNodeDef::NODEGROUP("nodegroup");
+RtToken RtNodeDef::INHERIT("inherit");
+RtToken RtNodeDef::TARGET("target");
+RtToken RtNodeDef::VERSION("version");
+RtToken RtNodeDef::IS_DEFAULT_VERSION("isdefaultversion");
 
 DEFINE_TYPED_SCHEMA(RtNodeDef, "nodedef");
 
@@ -37,13 +39,73 @@ RtPrim RtNodeDef::createPrim(const RtToken& typeName, const RtToken& name, RtPri
 const RtToken& RtNodeDef::getNode() const
 {
     RtTypedValue* v = prim()->getMetadata(NODE);
-    return v->getValue().asToken();
+    return v ? v->getValue().asToken() : EMPTY_TOKEN;
 }
 
 void RtNodeDef::setNode(const RtToken& node)
 {
-    RtTypedValue* v = prim()->getMetadata(NODE);
+    RtTypedValue* v = prim()->addMetadata(NODE, RtType::TOKEN);
     v->getValue().asToken() = node;
+}
+
+const RtToken& RtNodeDef::getNodeGroup() const
+{
+    RtTypedValue* v = prim()->getMetadata(NODEGROUP);
+    return v ? v->getValue().asToken() : EMPTY_TOKEN;
+}
+
+void RtNodeDef::setNodeGroup(const RtToken& nodegroup)
+{
+    RtTypedValue* v = prim()->addMetadata(NODEGROUP, RtType::TOKEN);
+    v->getValue().asToken() = nodegroup;
+}
+
+const RtToken& RtNodeDef::getTarget() const
+{
+    RtTypedValue* v = prim()->getMetadata(TARGET);
+    return v ? v->getValue().asToken() : EMPTY_TOKEN;
+}
+
+void RtNodeDef::setTarget(const RtToken& nodegroup)
+{
+    RtTypedValue* v = prim()->addMetadata(TARGET, RtType::TOKEN);
+    v->getValue().asToken() = nodegroup;
+}
+
+const RtToken& RtNodeDef::getIneritance() const
+{
+    RtTypedValue* v = prim()->getMetadata(INHERIT);
+    return v ? v->getValue().asToken() : EMPTY_TOKEN;
+}
+
+void RtNodeDef::setIneritance(const RtToken& inherit)
+{
+    RtTypedValue* v = prim()->addMetadata(INHERIT, RtType::TOKEN);
+    v->getValue().asToken() = inherit;
+}
+
+const RtToken& RtNodeDef::getVersion() const
+{
+    RtTypedValue* v = prim()->getMetadata(VERSION);
+    return v ? v->getValue().asToken() : EMPTY_TOKEN;
+}
+
+void RtNodeDef::setVersion(const RtToken& version)
+{
+    RtTypedValue* v = prim()->addMetadata(VERSION, RtType::TOKEN);
+    v->getValue().asToken() = version;
+}
+
+bool RtNodeDef::getIsDefaultVersion() const
+{
+    RtTypedValue* v = prim()->addMetadata(IS_DEFAULT_VERSION, RtType::TOKEN);
+    return v ? v->getValue().asBool() : false;
+}
+
+void RtNodeDef::setIsDefaultVersion(bool isDefault)
+{
+    RtTypedValue* v = prim()->addMetadata(IS_DEFAULT_VERSION, RtType::BOOLEAN);
+    v->getValue().asBool() = isDefault;
 }
 
 RtInput RtNodeDef::createInput(const RtToken& name, const RtToken& type, uint32_t flags)
@@ -76,6 +138,11 @@ void RtNodeDef::removeOutput(const RtToken& name)
     prim()->removeAttribute(name);
 }
 
+size_t RtNodeDef::numInputs() const
+{
+    return prim()->numInputs();
+}
+
 RtInput RtNodeDef::getInput(const RtToken& name) const
 {
     PvtInput* input = prim()->getInput(name);
@@ -88,9 +155,20 @@ RtAttrIterator RtNodeDef::getInputs() const
     return RtAttrIterator(getPrim(), filter);
 }
 
+size_t RtNodeDef::numOutputs() const
+{
+    return prim()->numOutputs();
+}
+
 RtOutput RtNodeDef::getOutput(const RtToken& name) const
 {
     PvtOutput* output = prim()->getOutput(name);
+    return output ? output->hnd() : RtOutput();
+}
+
+RtOutput RtNodeDef::getOutput() const
+{
+    PvtOutput* output = prim()->getOutput();
     return output ? output->hnd() : RtOutput();
 }
 

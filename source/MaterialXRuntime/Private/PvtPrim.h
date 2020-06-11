@@ -17,7 +17,7 @@
 namespace MaterialX
 {
 
-// Allocator class handling allocation of data for elements.
+// Allocator class handling allocation of data for prims.
 // The data allocated is kept by the allocator and freed
 // upon allocator destruction or by calling free() explicitly.
 // NOTE: Data is stored as raw byte pointers and destructors
@@ -61,7 +61,6 @@ private:
     vector<uint8_t*> _storage;
 };
 
-class PvtPrimDef;
 class RtAttrIterator;
 class RtPrimIterator;
 
@@ -72,7 +71,14 @@ class PvtPrim : public PvtObject
 public:
     static PvtDataHandle createNew(const RtTypeInfo* typeInfo, const RtToken& name, PvtPrim* parent);
 
-    void dispose();
+    RtPrim prim() const
+    {
+        return RtPrim(hnd());
+    }
+
+    void dispose(bool state);
+
+    void destroy();
 
     const RtTypeInfo* getTypeInfo() const
     {
@@ -90,6 +96,8 @@ public:
     PvtRelationship* createRelationship(const RtToken& name);
 
     void removeRelationship(const RtToken& name);
+
+    void renameRelationship(const RtToken& name, const RtToken& newName);
 
     PvtRelationship* getRelationship(const RtToken& name)
     {
@@ -109,6 +117,8 @@ public:
     PvtOutput* createOutput(const RtToken& name, const RtToken& type, uint32_t flags = 0);
 
     void removeAttribute(const RtToken& name);
+
+    void renameAttribute(const RtToken& name, const RtToken& newName);
 
     PvtAttribute* getAttribute(const RtToken& name) const
     {
@@ -130,6 +140,41 @@ public:
         auto it = _attrMap.find(name);
         return it != _attrMap.end() && it->second->isA<PvtOutput>() ?
             it->second->asA<PvtOutput>() : nullptr;
+    }
+
+    PvtOutput* getOutput() const
+    {
+        // Return first output found.
+        // Iterate backwards since outputs are often created after inputs.
+        for (auto it = _attrOrder.rbegin(); it != _attrOrder.rend(); ++it)
+        {
+            const PvtDataHandle& hnd = *it;
+            if (hnd->isA<PvtOutput>())
+            {
+                return hnd->asA<PvtOutput>();
+            }
+        }
+        return nullptr;
+    }
+
+    size_t numInputs() const
+    {
+        size_t count = 0;
+        for (const PvtDataHandle& hnd : _attrOrder)
+        {
+            count += size_t(hnd->isA<PvtInput>());
+        }
+        return count;
+    }
+
+    size_t numOutputs() const
+    {
+        size_t count = 0;
+        for (const PvtDataHandle& hnd : _attrOrder)
+        {
+            count += size_t(hnd->isA<PvtOutput>());
+        }
+        return count;
     }
 
     RtAttrIterator getAttributes(RtObjectPredicate predicate = nullptr) const;
@@ -162,7 +207,7 @@ public:
         return _allocator;
     }
 
-    RtToken makeUniqueName(const RtToken& name) const;
+    RtToken makeUniqueChildName(const RtToken& name) const;
 
 protected:
     PvtPrim(const RtTypeInfo* typeInfo, const RtToken& name, PvtPrim* parent);

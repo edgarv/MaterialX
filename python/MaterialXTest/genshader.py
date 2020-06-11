@@ -77,7 +77,7 @@ class TestGenShader(unittest.TestCase):
         # Add path to find all source code snippets
         context.registerSourceCodeSearchPath(searchPath)
         # Add path to find OSL include files
-        context.registerSourceCodeSearchPath(os.path.join(searchPath, "stdlib/osl"))
+        context.registerSourceCodeSearchPath(os.path.join(libraryPath, "osl"))
 
         # Test complete mode
         context.getOptions().shaderInterfaceType = int(ShaderInterfaceType.SHADER_INTERFACE_COMPLETE);

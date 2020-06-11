@@ -31,6 +31,139 @@ template<class T> shared_ptr<T> updateChildSubclass(ElementPtr parent, ElementPt
     return newChild;
 }
 
+bool convertMaterialsToNodes(DocumentPtr doc)
+{
+    bool modified = false;
+
+    vector<MaterialPtr> materials = doc->getMaterials();
+    for (auto m : materials)
+    {
+        // See if a node of this name has already been created.
+        // Should not occur otherwise there are duplicate existing
+        // Material elements.
+        string materialName = m->getName();
+        if (doc->getNode(materialName))
+        {
+            throw Exception("Material node already exists: " + materialName);
+        }
+
+        // Create a temporary name for the material element 
+        // so the new node can reuse the existing name.
+        string validName = doc->createValidChildName(materialName + "1");
+        m->setName(validName);
+
+        // Create a new material node
+        NodePtr materialNode = nullptr;
+
+        ShaderRefPtr sr;
+        // Only include the shader refs explicitly specified on the material instance
+        vector<ShaderRefPtr> srs = m->getShaderRefs();
+        for (size_t i = 0; i < srs.size(); i++)
+        {
+            sr = srs[i];
+
+            // See if shader has been created already.
+            // Should not occur as the shaderref is a uniquely named
+            // child of a uniquely named material element, but the two combined
+            // may have been used for another node instance which not a shader node.
+            string shaderNodeName = materialName + "_" + sr->getName();
+            NodePtr existingShaderNode = doc->getNode(shaderNodeName);
+            if (existingShaderNode)
+            {
+                const string& existingType = existingShaderNode->getType();
+                if (existingType == VOLUME_SHADER_TYPE_STRING ||
+                    existingType == SURFACE_SHADER_TYPE_STRING ||
+                    existingType == DISPLACEMENT_SHADER_TYPE_STRING)
+                {
+                    throw Exception("Shader node already exists: " + shaderNodeName);
+                }
+                else
+                {
+                    shaderNodeName = doc->createValidChildName(shaderNodeName);
+                }
+            }
+
+            modified = true;
+
+            // Find the shader type if defined
+            string shaderNodeType = SURFACE_SHADER_TYPE_STRING;
+            NodeDefPtr nodeDef = sr->getNodeDef();
+            if (nodeDef)
+            {
+                shaderNodeType = nodeDef->getType();
+            }
+
+            // Add in a new shader node
+            const string shaderNodeCategory = sr->getNodeString();
+            NodePtr shaderNode = doc->addNode(shaderNodeCategory, shaderNodeName, shaderNodeType);
+            shaderNode->setSourceUri(sr->getSourceUri());
+
+            for (auto valueElement : sr->getChildrenOfType<ValueElement>())
+            {
+                ElementPtr portChild = nullptr;
+
+                // Copy over bindinputs as inputs, and bindparams as params
+                if (valueElement->isA<BindInput>())
+                {
+                    portChild = shaderNode->addInput(valueElement->getName(), valueElement->getType());
+                }
+                else if (valueElement->isA<BindParam>())
+                {
+                    portChild = shaderNode->addParameter(valueElement->getName(), valueElement->getType());
+                }
+                if (portChild)
+                {
+                    // Copy over attributes.
+                    // Note: We preserve inputs which have nodegraph connections,
+                    // as well as top level output connections.
+                    portChild->copyContentFrom(valueElement);
+                }
+            }
+
+            // Copy over any bindtokens as tokens
+            for (auto bt : sr->getBindTokens())
+            {
+                TokenPtr token = shaderNode->addToken(bt->getName());
+                token->copyContentFrom(bt);
+            }
+
+            // Create a new material node if not already created and
+            // add a reference from the material node to the new shader node
+            if (!materialNode)
+            {
+                // Set the type of material based on current assumption that
+                // surfaceshaders + displacementshaders result in a surfacematerial
+                // while a volumeshader means a volumematerial needs to be created.
+                string materialNodeCategory =
+                    (shaderNodeType != VOLUME_SHADER_TYPE_STRING) ? SURFACE_MATERIAL_NODE_STRING
+                    : VOLUME_MATERIAL_NODE_STRING;
+                materialNode = doc->addNode(materialNodeCategory, materialName, MATERIAL_TYPE_STRING);
+                materialNode->setSourceUri(m->getSourceUri());
+                // Note: Inheritance does not get transfered to the node we do
+                // not perform the following:
+                //      - materialNode->setInheritString(m->getInheritString()); 
+            }
+            // Create input to replace each shaderref. Use shaderref name as unique
+            // input name.
+            InputPtr shaderInput = materialNode->addInput(shaderNodeType, shaderNodeType);
+            shaderInput->setNodeName(shaderNode->getName());
+            // Make sure to copy over any target and version information from the shaderref.
+            if (!sr->getTarget().empty())
+            {
+                shaderInput->setTarget(sr->getTarget());
+            }
+            if (!sr->getVersionString().empty())
+            {
+                shaderInput->setVersionString(sr->getVersionString());
+            }
+        }
+
+        // Remove existing material element
+        doc->removeChild(m->getName());
+    }
+    return modified;
+}
+
 } // anonymous namespace
 
 //
@@ -144,8 +277,47 @@ void Document::initialize()
     setVersionString(DOCUMENT_VERSION_STRING);
 }
 
+NodeDefPtr Document::addNodeDefFromGraph(NodeGraphPtr nodeGraph, const string& nodeDefName, const string& node, string& newGraphName, const string& group)
+{
+    if (getNodeDef(nodeDefName))
+    {
+        throw Exception("Cannot create duplicate nodedef: " + nodeDefName);
+    }
+
+    NodeGraphPtr graph = nodeGraph;
+    if (!newGraphName.empty())
+    {
+        if (getNodeGraph(newGraphName))
+        {
+            throw Exception("Cannot create duplicate nodegraph: " + newGraphName);
+        }
+        graph = addNodeGraph(newGraphName);
+        graph->copyContentFrom(nodeGraph);
+    }
+    graph->setNodeDefString(nodeDefName);
+
+    NodeDefPtr nodeDef = addChild<NodeDef>(nodeDefName);
+    nodeDef->setNodeString(node);
+    if (!group.empty())
+    {
+        nodeDef->setNodeGroup(group);
+    }
+
+    for (auto output : graph->getOutputs())
+    {
+        nodeDef->addOutput(output->getName(), output->getType());
+    }
+
+    return nodeDef;
+}
+
 void Document::importLibrary(const ConstDocumentPtr& library, const CopyOptions* copyOptions)
 {
+    if (!library)
+    {
+        return;
+    }
+
     bool skipConflictingElements = copyOptions && copyOptions->skipConflictingElements;
     for (const ConstElementPtr& child : library->getChildren())
     {
@@ -292,15 +464,15 @@ bool Document::validate(string* message) const
     return GraphElement::validate(message) && res;
 }
 
-void Document::upgradeVersion(int desiredMajorVersion, int desiredMinorVersion)
+void Document::upgradeVersion(bool applyFutureUpdates)
 {
     std::pair<int, int> versions = getVersionIntegers();
     int majorVersion = versions.first;
     int minorVersion = versions.second;
-    if (majorVersion == desiredMajorVersion &&
-        minorVersion == desiredMinorVersion)
+    if (majorVersion == MATERIALX_MAJOR_VERSION &&
+        minorVersion == MATERIALX_MINOR_VERSION &&
+        !applyFutureUpdates)
     {
-        setVersionString(makeVersionString(majorVersion, minorVersion));
         return;
     }
 
@@ -319,12 +491,6 @@ void Document::upgradeVersion(int desiredMajorVersion, int desiredMinorVersion)
             }
         }
         minorVersion = 23;
-    }
-    if (majorVersion == desiredMajorVersion &&
-        minorVersion == desiredMinorVersion)
-    {
-        setVersionString(makeVersionString(majorVersion, minorVersion));
-        return;
     }
 
     // Upgrade from v1.23 to v1.24
@@ -348,12 +514,6 @@ void Document::upgradeVersion(int desiredMajorVersion, int desiredMinorVersion)
         }
         minorVersion = 24;
     }
-    if (majorVersion == desiredMajorVersion &&
-        minorVersion == desiredMinorVersion)
-    {
-        setVersionString(makeVersionString(majorVersion, minorVersion));
-        return;
-    }
 
     // Upgrade from v1.24 to v1.25
     if (majorVersion == 1 && minorVersion == 24)
@@ -367,12 +527,6 @@ void Document::upgradeVersion(int desiredMajorVersion, int desiredMinorVersion)
             }
         }
         minorVersion = 25;
-    }
-    if (majorVersion == desiredMajorVersion &&
-        minorVersion == desiredMinorVersion)
-    {
-        setVersionString(makeVersionString(majorVersion, minorVersion));
-        return;
     }
 
     // Upgrade from v1.25 to v1.26
@@ -390,12 +544,6 @@ void Document::upgradeVersion(int desiredMajorVersion, int desiredMinorVersion)
             }
         }
         minorVersion = 26;
-    }
-    if (majorVersion == desiredMajorVersion &&
-        minorVersion == desiredMinorVersion)
-    {
-        setVersionString(makeVersionString(majorVersion, minorVersion));
-        return;
     }
 
     // Upgrade from v1.26 to v1.34
@@ -499,6 +647,17 @@ void Document::upgradeVersion(int desiredMajorVersion, int desiredMinorVersion)
         }
 
         // Combine udim assignments into udim sets.
+        for (GeomInfoPtr geomInfo : getGeomInfos())
+        {
+            vector<ElementPtr> origChildren = geomInfo->getChildren();
+            for (ElementPtr child : origChildren)
+            {
+                if (child->getCategory() == "geomattr")
+                {
+                    updateChildSubclass<GeomProp>(geomInfo, child);
+                }
+            }
+        }
         if (getGeomPropValue("udim") && !getGeomPropValue("udimset"))
         {
             StringSet udimSet;
@@ -532,12 +691,6 @@ void Document::upgradeVersion(int desiredMajorVersion, int desiredMinorVersion)
 
         minorVersion = 34;
     }
-    if (majorVersion == desiredMajorVersion &&
-        minorVersion == desiredMinorVersion)
-    {
-        setVersionString(makeVersionString(majorVersion, minorVersion));
-        return;
-    }
 
     // Upgrade from v1.34 to v1.35
     if (majorVersion == 1 && minorVersion == 34)
@@ -562,12 +715,6 @@ void Document::upgradeVersion(int desiredMajorVersion, int desiredMinorVersion)
             }
         }
         minorVersion = 35;
-    }
-    if (majorVersion == desiredMajorVersion &&
-        minorVersion == desiredMinorVersion)
-    {
-        setVersionString(makeVersionString(majorVersion, minorVersion));
-        return;
     }
 
     // Upgrade from v1.35 to v1.36
@@ -641,12 +788,6 @@ void Document::upgradeVersion(int desiredMajorVersion, int desiredMinorVersion)
         }
         minorVersion = 36;
     }
-    if (majorVersion == desiredMajorVersion &&
-        minorVersion == desiredMinorVersion)
-    {
-        setVersionString(makeVersionString(majorVersion, minorVersion));
-        return;
-    }
 
     // Upgrade from 1.36 to 1.37
     if (majorVersion == 1 && minorVersion == 36)
@@ -709,32 +850,6 @@ void Document::upgradeVersion(int desiredMajorVersion, int desiredMinorVersion)
             }
         }
 
-        const string BACKDROP_NODE = "backdrop";
-        const string INVERT_NODE = "invert";
-        const string INVERT_MATRIX_NODE = "invertmatrix";
-        const string ROTATE_NODE = "rotate";
-        const string ROTATE2D_NODE = "rotate2d";
-        const string ROTATE3D_NODE = "rotate3d";
-        const string COMPARE_NODE = "compare";
-        const string CUTOFF_PARAMETER = "cutoff";
-        const string INTEST_INPUT = "intest";
-        const string TRANSFORMPOINT_NODE = "transformpoint";
-        const string TRANSFORMVECTOR_NODE = "transformvector";
-        const string TRANSFORMNORMAL_NODE = "transformnormal";
-        const string FROMSPACE_INPUT = "fromspace";
-        const string TOSPACE_INPUT = "tospace";
-        const string TRANSFORMMATRIX_NODE = "transformmatrix";
-        const string IFGREATEREQ_NODE = "ifgreatereq";
-        const string VALUE1_INPUT = "value1";
-        const string VALUE2_INPUT = "value2";
-        const string COMBINE_NODE = "combine";
-        const string IN3_INPUT = "in3";
-        const string IN4_INPUT = "in4";
-        const string SEPARATE_NODE = "separate";
-        const string IN_INPUT = "in";
-        const string TWO_STRING = "2";
-        const string THREE_STRING = "3";
-        const string FOUR_STRING = "4";
         for (ElementPtr elem : traverseTree())
         {
             NodePtr node = elem->asA<Node>();
@@ -745,91 +860,97 @@ void Document::upgradeVersion(int desiredMajorVersion, int desiredMinorVersion)
             const string& nodeCategory = node->getCategory();
 
             // Change category from "invert to "invertmatrix" for matrix invert nodes
-            if (nodeCategory == INVERT_NODE &&
+            if (nodeCategory == "invert" &&
                 (node->getType() == getTypeString<Matrix33>() || node->getType() == getTypeString<Matrix44>()))
             {
-                node->setCategory(INVERT_MATRIX_NODE);
+                node->setCategory("invertmatrix");
             }
 
             // Change category from "rotate" to "rotate2d" or "rotate3d" nodes
-            else if (nodeCategory == ROTATE_NODE)
+            else if (nodeCategory == "rotate")
             {
-                node->setCategory((node->getType() == getTypeString<Vector2>()) ? ROTATE2D_NODE : ROTATE3D_NODE);
+                node->setCategory((node->getType() == getTypeString<Vector2>()) ? "rotate2d" : "rotate3d");
             }
 
             // Convert "compare" node to "ifgreatereq".
-            else if (nodeCategory == COMPARE_NODE)
+            else if (nodeCategory == "compare")
             {
-                node->setCategory(IFGREATEREQ_NODE);
-                // "cutoff" parameter becomes "value1" input
-                ParameterPtr cutoff = node->getParameter(CUTOFF_PARAMETER);
-                if (cutoff)
-                {
-                    InputPtr value2 = node->addInput(VALUE1_INPUT);
-                    value2->copyContentFrom(cutoff);
-                    node->removeChild(CUTOFF_PARAMETER);
-                }
-                // "intest" input becomes "value2" input
-                InputPtr intest = node->getInput(INTEST_INPUT);
+                node->setCategory("ifgreatereq");
+                InputPtr intest = node->getInput("intest");
                 if (intest)
                 {
-                    intest->setName(VALUE2_INPUT);
+                    intest->setName("value1");
+                }
+                ParameterPtr cutoff = node->getParameter("cutoff");
+                if (cutoff)
+                {
+                    InputPtr value2 = node->addInput("value2");
+                    value2->copyContentFrom(cutoff);
+                    node->removeChild(cutoff->getName());
+                }
+                InputPtr in1 = node->getInput("in1");
+                InputPtr in2 = node->getInput("in2");
+                if (in1 && in2)
+                {
+                    in1->setName(createValidChildName("temp"));
+                    in2->setName("in1");
+                    in1->setName("in2");
                 }
             }
 
             // Change nodes with category "tranform[vector|point|normal]",
             // which are not fromspace/tospace variants, to "transformmatrix"
-            else if (nodeCategory == TRANSFORMPOINT_NODE ||
-                     nodeCategory == TRANSFORMVECTOR_NODE ||
-                     nodeCategory == TRANSFORMNORMAL_NODE)
+            else if (nodeCategory == "transformpoint" ||
+                     nodeCategory == "transformvector" ||
+                     nodeCategory == "transformnormal")
             {
-                if (!node->getChild(FROMSPACE_INPUT) && !node->getChild(TOSPACE_INPUT))
+                if (!node->getChild("fromspace") && !node->getChild("tospace"))
                 {
-                    node->setCategory(TRANSFORMMATRIX_NODE);
+                    node->setCategory("transformmatrix");
                 }
             }
 
             // Convert "combine" to "combine2", "combine3" or "combine4"
-            else if (nodeCategory == COMBINE_NODE)
+            else if (nodeCategory == "combine")
             {
-                if (node->getChild(IN4_INPUT))
+                if (node->getChild("in4"))
                 {
-                    node->setCategory(COMBINE_NODE + FOUR_STRING);
+                    node->setCategory("combine4");
                 }
-                else if (node->getChild(IN3_INPUT))
+                else if (node->getChild("in3"))
                 {
-                    node->setCategory(COMBINE_NODE + THREE_STRING);
+                    node->setCategory("combine3");
                 }
                 else
                 {
-                    node->setCategory(COMBINE_NODE + TWO_STRING);
+                    node->setCategory("combine2");
                 }
             }
 
             // Convert "separate" to "separate2", "separate3" or "separate4"
-            else if (nodeCategory == SEPARATE_NODE)
+            else if (nodeCategory == "separate")
             {
-                InputPtr in = node->getInput(IN_INPUT);
+                InputPtr in = node->getInput("in");
                 if (in)
                 {
                     const string& inType = in->getType();
                     if (inType == getTypeString<Vector4>() || inType == getTypeString<Color4>())
                     {
-                        node->setCategory(SEPARATE_NODE + FOUR_STRING);
+                        node->setCategory("separate4");
                     }
                     else if (inType == getTypeString<Vector3>() || inType == getTypeString<Color3>())
                     {
-                        node->setCategory(SEPARATE_NODE + THREE_STRING);
+                        node->setCategory("separate3");
                     }
                     else
                     {
-                        node->setCategory(SEPARATE_NODE + TWO_STRING);
+                        node->setCategory("separate2");
                     }
                 }
             }
 
             // Convert backdrop nodes to backdrop elements
-            else if (nodeCategory == BACKDROP_NODE)
+            else if (nodeCategory == "backdrop")
             {
                 const string& nodeName = node->getName();
                 BackdropPtr backdrop = addBackdrop(nodeName);
@@ -860,169 +981,95 @@ void Document::upgradeVersion(int desiredMajorVersion, int desiredMinorVersion)
         removeNodeDef("ND_rotate_vector3");
 
         minorVersion = 37;
-    }
-    if (majorVersion == desiredMajorVersion &&
-        minorVersion == desiredMinorVersion)
-    {
-        setVersionString(makeVersionString(majorVersion, minorVersion));
-        return;
-    }
+    }  
 
-    if (majorVersion == 1 && minorVersion == 37)
+    // Apply latest updates on top of the current library version.
+    // When the next version become official, the update check
+    // will be moved and applied the that library version.
+    if (applyFutureUpdates)
     {
-        // Convert material Elements to Nodes
-        convertMaterialsToNodes(true);
-        minorVersion = 38;
+        convertMaterialsToNodes(getDocument());
+
+        if (majorVersion == 1 && minorVersion == 37)
+        {
+            // Update atan2 interface and rotate3d interface
+            const string ATAN2 = "atan2";
+            const string IN1 = "in1";
+            const string IN2 = "in2";
+            const string ROTATE3D = "rotate3d";
+            const string AXIS = "axis";
+
+            // Update nodedefs
+            for (auto nodedef : getMatchingNodeDefs(ATAN2))
+            {
+                InputPtr input = nodedef->getInput(IN1);
+                InputPtr input2 = nodedef->getInput(IN2);
+                string inputValue = input->getValueString();
+                input->setValueString(input2->getValueString());
+                input2->setValueString(inputValue);
+            }
+            for (auto nodedef : getMatchingNodeDefs(ROTATE3D))
+            {
+                ParameterPtr param = nodedef->getParameter(AXIS);
+                if (param)
+                {
+                    nodedef->removeParameter(AXIS);
+                    nodedef->addInput(AXIS, "vector3");
+                }
+            }
+
+            // Update nodes
+            for (ElementPtr elem : traverseTree())
+            {
+                NodePtr node = elem->asA<Node>();
+                if (!node)
+                {
+                    continue;
+                }
+                const string& nodeCategory = node->getCategory();
+                if (nodeCategory == ATAN2)
+                {
+                    InputPtr input = node->getInput(IN1);
+                    InputPtr input2 = node->getInput(IN2);
+                    if (input && input2)
+                    {
+                        string inputValue = input->getValueString();
+                        input->setValueString(input2->getValueString());
+                        input2->setValueString(inputValue);
+                    }
+                    else
+                    {
+                        if (input)
+                        {
+                            input->setName(IN2);
+                        }
+                        if (input2)
+                        {
+                            input2->setName(IN1);
+                        }
+                    }
+                }
+                else if (nodeCategory == ROTATE3D)
+                {
+                    ParameterPtr param = node->getParameter(AXIS);
+                    if (param)
+                    {
+                        const string v = param->getValueString();
+                        node->removeParameter(AXIS);
+                        InputPtr input = node->addInput(AXIS, "vector3");
+                        input->setValueString(v);
+                    }
+                }
+            }
+            minorVersion = 38;
+        }
     }
 
     if (majorVersion >= MATERIALX_MAJOR_VERSION &&
         minorVersion >= MATERIALX_MINOR_VERSION)
     {
-        setVersionString(makeVersionString(majorVersion, minorVersion));
+        setVersionString(makeVersionString(majorVersion, minorVersion)); 
     }
-}
-
-bool Document::convertMaterialsToNodes(bool replaceNodes)
-{
-    bool modified = false;
-
-    vector<MaterialPtr> materials = getMaterials();
-    for (auto m : materials)
-    {
-        // See if a node of this name has already been created.
-        // Should not occur otherwise there are duplicate existing
-        // Material elements.
-        string materialName = m->getName();
-        if (getNode(materialName))
-        {
-            throw Exception("Material node already exists: " + materialName);
-        }
-
-        // Create a temporary name for the material element 
-        // so the new node can reuse the existing name.
-        if (replaceNodes)
-        {
-            string validName = createValidChildName(materialName + "1");
-            m->setName(validName);
-        }
-        else
-        {
-            materialName = createValidChildName(materialName);
-        }
-
-        // Create a new material node
-        NodePtr materialNode = nullptr;
-
-        ShaderRefPtr sr;
-        // Only include the shader refs explicitly specified on the material instance
-        vector<ShaderRefPtr> srs = m->getShaderRefs();
-        for (size_t i = 0; i < srs.size(); i++)
-        {
-            sr = srs[i];
-
-            // See if shader has been created already.
-            // Should not occur as the shaderref is a uniquely named
-            // child of a uniquely named material element, but the two combined
-            // may have been used for another node instance which not a shader node.
-            string shaderNodeName = m->getName() + "_" + sr->getName();
-            NodePtr existingShaderNode = getNode(shaderNodeName);
-            if (existingShaderNode)
-            {
-                const string& existingType = existingShaderNode->getType();
-                if (existingType == VOLUME_SHADER_TYPE_STRING ||
-                    existingType == SURFACE_SHADER_TYPE_STRING ||
-                    existingType == DISPLACEMENT_SHADER_TYPE_STRING)
-                {
-                    throw Exception("Shader node already exists: " + shaderNodeName);
-                }
-                else
-                {
-                    shaderNodeName = createValidChildName(shaderNodeName);
-                }
-            }
-
-            modified = true;
-
-            // Find the shader type if defined
-            string shaderNodeType = SURFACE_SHADER_TYPE_STRING;
-            NodeDefPtr nodeDef = sr->getNodeDef();
-            if (nodeDef)
-            {
-                shaderNodeType = nodeDef->getType();
-            }
-
-            // Add in a new shader node
-            const string shaderNodeCategory = sr->getNodeString();
-            NodePtr shaderNode = addNode(shaderNodeCategory, shaderNodeName, shaderNodeType);
-            shaderNode->setSourceUri(sr->getSourceUri());
-
-            for (auto valueElement : sr->getChildrenOfType<ValueElement>())
-            {
-                ElementPtr portChild = nullptr;
-
-                // Copy over bindinputs as inputs, and bindparams as params
-                if (valueElement->isA<BindInput>())
-                {
-                    portChild = shaderNode->addInput(valueElement->getName(), valueElement->getType());
-                }
-                else if (valueElement->isA<BindParam>())
-                {
-                    portChild = shaderNode->addParameter(valueElement->getName(), valueElement->getType());
-                }
-                if (portChild)
-                {
-                    // Copy over attributes.
-                    // Note: We preserve inputs which have nodegraph connections,
-                    // as well as top level output connections.
-                    portChild->copyContentFrom(valueElement);
-                }
-            }
-
-            // Copy over any bindtokens as tokens
-            for (auto bt : sr->getBindTokens())
-            {
-                TokenPtr token = shaderNode->addToken(bt->getName());
-                token->copyContentFrom(bt);
-            }
-
-            // Create a new material node if not already created and
-            // add a reference from the material node to the new shader node
-            if (!materialNode)
-            {
-                // Set the type of material based on current assumption that
-                // surfaceshaders + displacementshaders result in a surfacematerial
-                // while a volumeshader means a volumematerial needs to be created.
-                string materialNodeCategory =
-                    (shaderNodeType != VOLUME_SHADER_TYPE_STRING) ? SURFACE_MATERIAL_NODE_STRING
-                    : VOLUME_MATERIAL_NODE_STRING;
-                materialNode = addNode(materialNodeCategory, materialName, MATERIAL_TYPE_STRING);
-                materialNode->setSourceUri(m->getSourceUri());
-                // Note: Inheritance does not get transfered to the node we do
-                // not perform the following:
-                //      - materialNode->setInheritString(m->getInheritString()); 
-            }
-            // Create input to replace each shaderref. Use shaderref name as unique
-            // input name.
-            InputPtr shaderInput = materialNode->addInput(shaderNodeType, shaderNodeType);
-            shaderInput->setNodeName(shaderNode->getName());
-            // Make sure to copy over any target and version information from the shaderref.
-            if (!sr->getTarget().empty())
-            {
-                shaderInput->setTarget(sr->getTarget());
-            }
-            if (!sr->getVersionString().empty())
-            {
-                shaderInput->setVersionString(sr->getVersionString());
-            }
-        }
-
-        // Remove existing material element
-        if (replaceNodes)
-        {
-            removeChild(m->getName());
-        }
-    }
-    return modified;
 }
 
 void Document::onAddElement(ElementPtr, ElementPtr)

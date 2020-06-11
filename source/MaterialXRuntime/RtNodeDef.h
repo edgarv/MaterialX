@@ -30,6 +30,36 @@ public:
     /// Set the node for this nodedef.
     void setNode(const RtToken& node);
 
+    /// Return the node group for this nodedef.
+    const RtToken& getNodeGroup() const;
+
+    /// Set the node for this nodedef.
+    void setNodeGroup(const RtToken& nodegroup);
+
+    /// Return the target for this nodedef.
+    const RtToken& getTarget() const;
+
+    /// Set the target for this nodedef.
+    void setTarget(const RtToken& nodegroup);
+
+    /// Return the inheritance for this nodedef.
+    const RtToken& getIneritance() const;
+
+    /// Set the inheritance for this nodedef.
+    void setIneritance(const RtToken& inherit);
+
+    /// Return the version for this nodedef.
+    const RtToken& getVersion() const;
+
+    /// Set the version for this nodedef.
+    void setVersion(const RtToken& version);
+
+    /// Return the version for this nodedef.
+    bool getIsDefaultVersion() const;
+
+    /// Set the version for this nodedef.
+    void setIsDefaultVersion(bool isDefault);
+
     /// Add an input attribute to the interface.
     RtInput createInput(const RtToken& name, const RtToken& type, uint32_t flags = 0);
 
@@ -42,14 +72,25 @@ public:
     /// Remove an output attribute from the interface.
     void removeOutput(const RtToken& name);
 
+    /// Return the number of inputs on the interface.
+    size_t numInputs() const;
+
     /// Return the named input.
     RtInput getInput(const RtToken& name) const;
 
     /// Return an iterator traversing all input attributes.
     RtAttrIterator getInputs() const;
 
+    /// Return the number of outputs on the interface.
+    size_t numOutputs() const;
+
     /// Return the named output.
     RtOutput getOutput(const RtToken& name) const;
+
+    /// Return the single output for single output nodes.
+    /// Or if multiple outputs are available return the 
+    /// last created output.
+    RtOutput getOutput() const;
 
     /// Return an iterator traversing all output attributes.
     RtAttrIterator getOutputs() const;
@@ -63,6 +104,13 @@ public:
 
     /// Return true if this nodedef is registerd as a master prim.
     bool isMasterPrim() const;
+
+    static RtToken NODE;
+    static RtToken NODEGROUP;
+    static RtToken INHERIT;
+    static RtToken TARGET;
+    static RtToken VERSION;
+    static RtToken IS_DEFAULT_VERSION;
 };
 
 }

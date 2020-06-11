@@ -7,10 +7,13 @@
 
 #include <MaterialXGenShader/Nodes/HwSourceCodeNode.h>
 #include <MaterialXGenShader/Nodes/HwCompoundNode.h>
+#include <MaterialXGenShader/Nodes/LayerNode.h>
 #include <MaterialXGenShader/GenContext.h>
 
 #include <MaterialXCore/Document.h>
 #include <MaterialXCore/Definition.h>
+
+#include <queue>
 
 namespace MaterialX
 {
@@ -20,7 +23,6 @@ namespace HW
     const string T_IN_POSITION                    = "$inPosition";
     const string T_IN_NORMAL                      = "$inNormal";
     const string T_IN_TANGENT                     = "$inTangent";
-    const string T_IN_BITANGENT                   = "$inBitangent";
     const string T_IN_TEXCOORD                    = "$inTexcoord";
     const string T_IN_COLOR                       = "$inColor";
     const string T_POSITION_WORLD                 = "$positionWorld";
@@ -59,6 +61,8 @@ namespace HW
     const string T_ENV_RADIANCE_MIPS              = "$envRadianceMips";
     const string T_ENV_RADIANCE_SAMPLES           = "$envRadianceSamples";
     const string T_ENV_IRRADIANCE                 = "$envIrradiance";
+    const string T_ALBEDO_TABLE                   = "$albedoTable";
+    const string T_ALBEDO_TABLE_SIZE              = "$albedoTableSize";
     const string T_AMB_OCC_MAP                    = "$ambOccMap";
     const string T_AMB_OCC_GAIN                   = "$ambOccGain";
     const string T_SHADOW_MAP                     = "$shadowMap";
@@ -69,7 +73,6 @@ namespace HW
     const string IN_POSITION                      = "i_position";
     const string IN_NORMAL                        = "i_normal";
     const string IN_TANGENT                       = "i_tangent";
-    const string IN_BITANGENT                     = "i_bitangent";
     const string IN_TEXCOORD                      = "i_texcoord";
     const string IN_COLOR                         = "i_color";
     const string POSITION_WORLD                   = "positionWorld";
@@ -108,10 +111,12 @@ namespace HW
     const string ENV_RADIANCE_MIPS                = "u_envRadianceMips";
     const string ENV_RADIANCE_SAMPLES             = "u_envRadianceSamples";
     const string ENV_IRRADIANCE                   = "u_envIrradiance";
-    const string SHADOW_MAP                       = "u_shadowMap";
-    const string SHADOW_MATRIX                    = "u_shadowMatrix";
+    const string ALBEDO_TABLE                     = "u_albedoTable";
+    const string ALBEDO_TABLE_SIZE                = "u_albedoTableSize";
     const string AMB_OCC_MAP                      = "u_ambOccMap";
     const string AMB_OCC_GAIN                     = "u_ambOccGain";
+    const string SHADOW_MAP                       = "u_shadowMap";
+    const string SHADOW_MATRIX                    = "u_shadowMatrix";
     const string VERTEX_DATA_INSTANCE             = "vd";
     const string LIGHT_DATA_INSTANCE              = "u_lightData";
 
@@ -119,6 +124,7 @@ namespace HW
     const string VERTEX_DATA                      = "VertexData";
     const string PRIVATE_UNIFORMS                 = "PrivateUniforms";
     const string PUBLIC_UNIFORMS                  = "PublicUniforms";
+    const string SAMPLER_UNIFORMS                 = "SamplerUniforms";
     const string LIGHT_DATA                       = "LightData";
     const string PIXEL_OUTPUTS                    = "PixelOutputs";
     const string DIR_N                            = "N";
@@ -127,6 +133,7 @@ namespace HW
     const string ATTR_TRANSPARENT                 = "transparent";
     const string USER_DATA_CLOSURE_CONTEXT        = "udcc";
     const string USER_DATA_LIGHT_SHADERS          = "udls";
+    const string USER_DATA_BINDING_CONTEXT        = "udbinding";
 }
 
 namespace Stage
@@ -146,7 +153,6 @@ HwShaderGenerator::HwShaderGenerator(SyntaxPtr syntax) :
     _tokenSubstitutions[HW::T_IN_POSITION] = HW::IN_POSITION;
     _tokenSubstitutions[HW::T_IN_NORMAL] = HW::IN_NORMAL;
     _tokenSubstitutions[HW::T_IN_TANGENT] = HW::IN_TANGENT;
-    _tokenSubstitutions[HW::T_IN_BITANGENT] = HW::IN_BITANGENT;
     _tokenSubstitutions[HW::T_IN_TEXCOORD] = HW::IN_TEXCOORD;
     _tokenSubstitutions[HW::T_IN_COLOR] = HW::IN_COLOR;
     _tokenSubstitutions[HW::T_POSITION_WORLD] = HW::POSITION_WORLD;
@@ -185,6 +191,8 @@ HwShaderGenerator::HwShaderGenerator(SyntaxPtr syntax) :
     _tokenSubstitutions[HW::T_ENV_RADIANCE_MIPS] = HW::ENV_RADIANCE_MIPS;
     _tokenSubstitutions[HW::T_ENV_RADIANCE_SAMPLES] = HW::ENV_RADIANCE_SAMPLES;
     _tokenSubstitutions[HW::T_ENV_IRRADIANCE] = HW::ENV_IRRADIANCE;
+    _tokenSubstitutions[HW::T_ALBEDO_TABLE] = HW::ALBEDO_TABLE;
+    _tokenSubstitutions[HW::T_ALBEDO_TABLE_SIZE] = HW::ALBEDO_TABLE_SIZE;
     _tokenSubstitutions[HW::T_SHADOW_MAP] = HW::SHADOW_MAP;
     _tokenSubstitutions[HW::T_SHADOW_MATRIX] = HW::SHADOW_MATRIX;
     _tokenSubstitutions[HW::T_AMB_OCC_MAP] = HW::AMB_OCC_MAP;
@@ -222,8 +230,18 @@ ShaderPtr HwShaderGenerator::createShader(const string& name, ElementPtr element
     // Create vertex stage.
     ShaderStagePtr vs = createStage(Stage::VERTEX, *shader);
     vs->createInputBlock(HW::VERTEX_INPUTS, "i_vs");
+
+    // Each Stage must have three types of uniform blocks:
+    // Private, Public and Sampler blocks
+    // Public uniforms are inputs that should be published in a user interface for user interaction,
+    // while private uniforms are internal variables needed by the system which should not be exposed in UI.
+    // So when creating these uniforms for a shader node, if the variable is user-facing it should go into the public block,
+    // and otherwise the private block.
+    // All texture based objects should be added to Sampler block
+
     vs->createUniformBlock(HW::PRIVATE_UNIFORMS, "u_prv");
     vs->createUniformBlock(HW::PUBLIC_UNIFORMS, "u_pub");
+    vs->createUniformBlock(HW::SAMPLER_UNIFORMS, "u_s");
 
     // Create required variables for vertex stage
     VariableBlock& vsInputs = vs->getInputBlock(HW::VERTEX_INPUTS);
@@ -235,41 +253,52 @@ ShaderPtr HwShaderGenerator::createShader(const string& name, ElementPtr element
     // Create pixel stage.
     ShaderStagePtr ps = createStage(Stage::PIXEL, *shader);
     VariableBlockPtr psOutputs = ps->createOutputBlock(HW::PIXEL_OUTPUTS, "o_ps");
+
+    // Create required Uniform blocks and any additonal blocks if needed.
     VariableBlockPtr psPrivateUniforms = ps->createUniformBlock(HW::PRIVATE_UNIFORMS, "u_prv");
     VariableBlockPtr psPublicUniforms = ps->createUniformBlock(HW::PUBLIC_UNIFORMS, "u_pub");
+    VariableBlockPtr psSamplerUniforms = ps->createUniformBlock(HW::SAMPLER_UNIFORMS, "u_s");
     VariableBlockPtr lightData = ps->createUniformBlock(HW::LIGHT_DATA, HW::T_LIGHT_DATA_INSTANCE);
     lightData->add(Type::INTEGER, "type");
 
     // Add a block for data from vertex to pixel shader.
     addStageConnectorBlock(HW::VERTEX_DATA, HW::T_VERTEX_DATA_INSTANCE, *vs, *ps);
 
-    // Add uniforms for shadow map rendering if needed.
+    // Add uniforms for shadow map rendering.
     if (context.getOptions().hwShadowMap)
     {
-        psPrivateUniforms->add(Type::FILENAME, HW::T_SHADOW_MAP);
+        psSamplerUniforms->add(Type::FILENAME, HW::T_SHADOW_MAP);
         psPrivateUniforms->add(Type::MATRIX44, HW::T_SHADOW_MATRIX, Value::createValue(Matrix44::IDENTITY));
     }
 
-    // Add inputs and uniforms for ambient occlusion if needed.
+    // Add inputs and uniforms for ambient occlusion.
     if (context.getOptions().hwAmbientOcclusion)
     {
         addStageInput(HW::VERTEX_INPUTS, Type::VECTOR2, HW::T_IN_TEXCOORD + "_0", *vs);
         addStageConnector(HW::VERTEX_DATA, Type::VECTOR2, HW::T_TEXCOORD + "_0", *vs, *ps);
-        psPrivateUniforms->add(Type::FILENAME, HW::T_AMB_OCC_MAP);
+        psSamplerUniforms->add(Type::FILENAME, HW::T_AMB_OCC_MAP);
         psPrivateUniforms->add(Type::FLOAT, HW::T_AMB_OCC_GAIN, Value::createValue(1.0f));
     }
 
-    // Add uniforms for environment lighting if needed.
+    // Add uniforms for environment lighting.
     bool lighting = graph->hasClassification(ShaderNode::Classification::SHADER | ShaderNode::Classification::SURFACE) ||
                     graph->hasClassification(ShaderNode::Classification::BSDF);
     if (lighting && context.getOptions().hwSpecularEnvironmentMethod != SPECULAR_ENVIRONMENT_NONE)
     {
         const Matrix44 yRotationPI = Matrix44::createScale(Vector3(-1, 1, -1));
         psPrivateUniforms->add(Type::MATRIX44, HW::T_ENV_MATRIX, Value::createValue(yRotationPI));
-        psPrivateUniforms->add(Type::FILENAME, HW::T_ENV_RADIANCE);
+        psSamplerUniforms->add(Type::FILENAME, HW::T_ENV_RADIANCE);
         psPrivateUniforms->add(Type::INTEGER, HW::T_ENV_RADIANCE_MIPS, Value::createValue<int>(1));
         psPrivateUniforms->add(Type::INTEGER, HW::T_ENV_RADIANCE_SAMPLES, Value::createValue<int>(16));
-        psPrivateUniforms->add(Type::FILENAME, HW::T_ENV_IRRADIANCE);
+        psSamplerUniforms->add(Type::FILENAME, HW::T_ENV_IRRADIANCE);
+    }
+
+    // Add uniforms for the directional albedo table.
+    if (context.getOptions().directionalAlbedoMethod == DIRECTIONAL_ALBEDO_TABLE ||
+        context.getOptions().writeDirectionalAlbedoTable)
+    {
+        psSamplerUniforms->add(Type::FILENAME, HW::T_ALBEDO_TABLE);
+        psPrivateUniforms->add(Type::INTEGER, HW::T_ALBEDO_TABLE_SIZE, Value::createValue<int>(64));
     }
 
     // Create uniforms for the published graph interface
@@ -279,7 +308,14 @@ ShaderPtr HwShaderGenerator::createShader(const string& name, ElementPtr element
         // and are editable by users.
         if (!inputSocket->getConnections().empty() && graph->isEditable(*inputSocket))
         {
-            psPublicUniforms->add(inputSocket->getSelf());
+            if (inputSocket->getType() == Type::FILENAME)
+            {
+                psSamplerUniforms->add(inputSocket->getSelf());
+            }
+            else
+            {
+                psPublicUniforms->add(inputSocket->getSelf());
+            }
         }
     }
 
@@ -345,7 +381,7 @@ ShaderPtr HwShaderGenerator::createShader(const string& name, ElementPtr element
                     if (!input->getConnection() && input->getType() == Type::FILENAME)
                     {
                         // Create the uniform using the filename type to make this uniform into a texture sampler.
-                        ShaderPort* filename = psPublicUniforms->add(Type::FILENAME, input->getVariable(), input->getValue());
+                        ShaderPort* filename = psSamplerUniforms->add(Type::FILENAME, input->getVariable(), input->getValue());
                         filename->setPath(input->getPath());
 
                         // Assing the uniform name to the input value
@@ -374,50 +410,67 @@ ShaderPtr HwShaderGenerator::createShader(const string& name, ElementPtr element
 
 void HwShaderGenerator::emitFunctionCall(const ShaderNode& node, GenContext& context, ShaderStage& stage, bool checkScope) const
 {
+    // Omit node if it's tagged to be excluded.
+    if (node.getFlag(ShaderNodeFlag::EXCLUDE_FUNCTION_CALL))
+    {
+        return;
+    }
+
     // Omit node if it's only used inside a conditional branch
     if (checkScope && node.referencedConditionally())
     {
         emitComment("Omitted node '" + node.getName() + "'. Only used in conditional node '" + 
                     node.getScopeInfo().conditionalNode->getName() + "'", stage);
+        return;
+    }
+
+    bool match = true;
+
+    // Check if we have a closure context to modify the function call.
+    HwClosureContextPtr ccx = context.getUserData<HwClosureContext>(HW::USER_DATA_CLOSURE_CONTEXT);
+
+    if (ccx && node.hasClassification(ShaderNode::Classification::CLOSURE))
+    {
+        // If a layer operator is used the node to check classification on
+        // is the node connected to the top layer input.
+        const ShaderNode* classifyNode = &node;
+        if (node.hasClassification(ShaderNode::Classification::LAYER))
+        {
+            const ShaderInput* top = node.getInput(LayerNode::TOP_STRING);
+            if (top && top->getConnection())
+            {
+                classifyNode = top->getConnection()->getNode();
+            }
+        }
+
+        match =
+            // For reflection and indirect we don't support pure transmissive closures.
+            ((ccx->getType() == HwClosureContext::REFLECTION || ccx->getType() == HwClosureContext::INDIRECT) &&
+                classifyNode->hasClassification(ShaderNode::Classification::BSDF) &&
+                !classifyNode->hasClassification(ShaderNode::Classification::BSDF_T)) ||
+            // For transmissive we don't support pure reflective closures.
+            (ccx->getType() == HwClosureContext::TRANSMISSION &&
+                classifyNode->hasClassification(ShaderNode::Classification::BSDF) &&
+                !classifyNode->hasClassification(ShaderNode::Classification::BSDF_R)) ||
+            // For emission we only support emission closures.
+            (ccx->getType() == HwClosureContext::EMISSION &&
+                classifyNode->hasClassification(ShaderNode::Classification::EDF));
+    }
+
+    if (match)
+    {
+        // A match between closure context and node classification was found.
+        // So emit the function call in this context.
+        node.getImplementation().emitFunctionCall(node, context, stage);
     }
     else
     {
-        bool match = true;
-
-        // Check if we have a closure context to modify the function call.
-        HwClosureContextPtr ccx = context.getUserData<HwClosureContext>(HW::USER_DATA_CLOSURE_CONTEXT);
-
-        if (ccx && node.hasClassification(ShaderNode::Classification::CLOSURE))
-        {
-            match =
-                // For reflection and indirect we don't support pure transmissive closures.
-                ((ccx->getType() == HwClosureContext::REFLECTION || ccx->getType() == HwClosureContext::INDIRECT) &&
-                    node.hasClassification(ShaderNode::Classification::BSDF) &&
-                    !node.hasClassification(ShaderNode::Classification::BSDF_T)) ||
-                // For transmissive we don't support pure reflective closures.
-                (ccx->getType() == HwClosureContext::TRANSMISSION &&
-                    node.hasClassification(ShaderNode::Classification::BSDF) &&
-                    !node.hasClassification(ShaderNode::Classification::BSDF_R)) ||
-                // For emission we only support emission closures.
-                (ccx->getType() == HwClosureContext::EMISSION &&
-                    node.hasClassification(ShaderNode::Classification::EDF));
-        }
-
-        if (match)
-        {
-            // A match between closure context and node classification was found.
-            // So emit the function call in this context.
-            node.getImplementation().emitFunctionCall(node, context, stage);
-        }
-        else
-        {
-            // Context and node classification doen't match so just
-            // emit the output variable set to default value, in case
-            // it is referenced by another nodes in this context.
-            emitLineBegin(stage);
-            emitOutput(node.getOutput(), true, true, context, stage);
-            emitLineEnd(stage);
-        }
+        // Context and node classification doesn't match so just
+        // emit the output variable set to default value, in case
+        // it is referenced by another nodes in this context.
+        emitLineBegin(stage);
+        emitOutput(node.getOutput(), true, true, context, stage);
+        emitLineEnd(stage);
     }
 }
 
@@ -589,6 +642,16 @@ ShaderNodeImplPtr HwShaderGenerator::createCompoundImplementation(const NodeGrap
     // The standard compound implementation
     // is the compound implementation to us by default
     return HwCompoundNode::create();
+}
+
+void HwShaderGenerator::addStageLightingUniforms(GenContext& context, ShaderStage& stage) const
+{
+    // Create uniform for number of active light sources
+    if (context.getOptions().hwMaxActiveLightSources > 0)
+    {
+        ShaderPort* numActiveLights = addStageUniform(HW::PRIVATE_UNIFORMS, Type::INTEGER, HW::T_NUM_ACTIVE_LIGHT_SOURCES, stage);
+        numActiveLights->setValue(Value::createValue<int>(0));
+    }
 }
 
 } // namespace MaterialX

@@ -11,8 +11,6 @@
 
 #include <MaterialXCore/Library.h>
 
-#include <MaterialXCore/Element.h>
-
 #include <MaterialXCore/Geom.h>
 
 namespace MaterialX
@@ -159,7 +157,6 @@ class PortElement : public ValueElement
         return getAttribute(NODE_GRAPH_ATTRIBUTE);
     }
 
-
     /// @}
     /// @name Output
     /// @{
@@ -218,7 +215,8 @@ class PortElement : public ValueElement
     /// @{
 
     /// Set the node to which this element is connected.  The given node must
-    /// belong to the same node graph.
+    /// belong to the same node graph.  If the node argument is null, then
+    /// any existing node connection will be cleared.
     void setConnectedNode(NodePtr node);
 
     /// Return the node, if any, to which this element is connected.

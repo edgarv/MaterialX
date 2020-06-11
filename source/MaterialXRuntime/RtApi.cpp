@@ -15,280 +15,13 @@
 #include <MaterialXRuntime/RtLook.h>
 #include <MaterialXRuntime/RtCollection.h>
 
+#include <MaterialXRuntime/Private/PvtApi.h>
 #include <MaterialXRuntime/Private/PvtPrim.h>
 
 namespace MaterialX
 {
 
-class PvtApi
-{
-public:
-    PvtApi()
-    {
-        reset();
-    }
-
-    void registerCreateFunction(const RtToken& typeName, RtPrimCreateFunc creator)
-    {
-        if (getCreateFunction(typeName))
-        {
-            throw ExceptionRuntimeError("A create function for type name '" + typeName.str() + "' is already registered");
-        }
-        _createFunctions[typeName] = creator;
-    }
-
-    void unregisterCreateFunction(const RtToken& typeName)
-    {
-        _createFunctions.erase(typeName);
-    }
-
-    bool hasCreateFunction(const RtToken& typeName)
-    {
-        return _createFunctions.count(typeName) > 0;
-    }
-
-    RtPrimCreateFunc getCreateFunction(const RtToken& typeName)
-    {
-        auto it = _createFunctions.find(typeName);
-        return it != _createFunctions.end() ? it->second : nullptr;
-    }
-
-    void registerMasterPrim(const RtPrim& prim)
-    {
-        if (getMasterPrim(prim.getName()))
-        {
-            throw ExceptionRuntimeError("A master prim with name '" + prim.getName().str() + "' is already registered");
-        }
-        _masterPrimRoot->asA<PvtPrim>()->addChildPrim(PvtObject::ptr<PvtPrim>(prim));
-    }
-
-    void unregisterMasterPrim(const RtToken& name)
-    {
-        PvtPrim* prim = _masterPrimRoot->asA<PvtPrim>()->getChild(name);
-        if (prim)
-        {
-            _masterPrimRoot->asA<PvtPrim>()->removeChildPrim(prim);
-        }
-    }
-
-    bool hasMasterPrim(const RtToken& name)
-    {
-        PvtPrim* prim = _masterPrimRoot->asA<PvtPrim>()->getChild(name);
-        return prim != nullptr;
-    }
-
-    RtPrim getMasterPrim(const RtToken& name)
-    {
-        PvtPrim* prim = _masterPrimRoot->asA<PvtPrim>()->getChild(name);
-        return prim ? prim->hnd() : RtPrim();
-    }
-
-    RtPrimIterator getMasterPrims(RtObjectPredicate predicate = nullptr)
-    {
-        return RtPrimIterator(_masterPrimRoot, predicate);
-    }
-
-    void clearSearchPath()
-    {
-        _searchPaths.clear();
-    }
-
-    void clearTextureSearchPath()
-    {
-        _textureSearchPaths.clear();
-    }
-
-    void clearImplementationSearchPath()
-    {
-        _implementationSearchPaths.clear();
-    }
-
-
-    void setSearchPath(const FileSearchPath& searchPath)
-    {
-        _searchPaths.append(searchPath);
-    }
-
-    void setTextureSearchPath(const FileSearchPath& searchPath)
-    {
-        _textureSearchPaths.append(searchPath);
-    }
-
-    void setImplementationSearchPath(const FileSearchPath& searchPath)
-    {
-        _implementationSearchPaths.append(searchPath);
-    }
-
-    const FileSearchPath& getSearchPath() const
-    {
-        return _searchPaths;
-    }
-
-    const FileSearchPath& getTextureSearchPath() const
-    {
-        return _textureSearchPaths;
-    }
-
-    const FileSearchPath& getImplementationSearchPath() const
-    {
-        return _implementationSearchPaths;
-    }
-
-    void loadLibrary(const RtToken& name)
-    {
-        // If already loaded unload the old first,
-        // to support reloading of updated libraries.
-        if (getLibrary(name))
-        {
-            unloadLibrary(name);
-        }
-
-        RtStagePtr lib = RtStage::createNew(name);
-        _libraries[name] = lib;
-
-        RtFileIo file(lib);
-        file.readLibraries({ name }, _searchPaths);
-
-        _libraryRoot->addReference(lib);
-    }
-
-    void unloadLibrary(const RtToken& name)
-    {
-        RtStagePtr lib = getLibrary(name);
-        if (lib)
-        {
-            // Unregister any nodedefs from this library.
-            RtSchemaPredicate<RtNodeDef> nodedefFilter;
-            for (RtPrim nodedef : lib->getRootPrim().getChildren(nodedefFilter))
-            {
-                unregisterMasterPrim(nodedef.getName());
-            }
-
-            // Delete the library.
-            _libraries.erase(name);
-        }
-    }
-
-    RtStagePtr getLibrary(const RtToken& name)
-    {
-        auto it = _libraries.find(name);
-        return it != _libraries.end() ? it->second : nullptr;
-    }
-
-    RtStagePtr getLibraryRoot()
-    {
-        return _libraryRoot;
-    }
-
-    RtTokenVec getLibraryNames() const
-    {
-        RtTokenVec names;
-        for (auto it : _libraries)
-        {
-            names.push_back(it.first);
-        }
-        return names;
-    }
-
-    RtToken makeUniqueName(const RtToken& name) const
-    {
-        RtToken newName = name;
-
-        // Check if there is another stage with this name.
-        RtStagePtr otherStage = getStage(name);
-        if (otherStage)
-        {
-            // Find a number to append to the name, incrementing
-            // the counter until a unique name is found.
-            string baseName = name.str();
-            int i = 1;
-            const size_t n = name.str().find_last_not_of("0123456789") + 1;
-            if (n < name.str().size())
-            {
-                const string number = name.str().substr(n);
-                i = std::stoi(number) + 1;
-                baseName = baseName.substr(0, n);
-            }
-            // Iterate until there is no other stage with the resulting name.
-            do {
-                newName = baseName + std::to_string(i++);
-                otherStage = getStage(newName);
-            } while (otherStage);
-        }
-
-        return newName;
-    }
-
-    RtStagePtr createStage(const RtToken& name)
-    {
-        const RtToken newName = makeUniqueName(name);
-        RtStagePtr stage = RtStage::createNew(newName);
-        _stages[newName] = stage;
-        return stage;
-    }
-
-    void deleteStage(const RtToken& name)
-    {
-        _stages.erase(name);
-    }
-
-    RtStagePtr getStage(const RtToken& name) const
-    {
-        auto it = _stages.find(name);
-        return it != _stages.end() ? it->second : RtStagePtr();
-    }
-
-    RtToken renameStage(const RtToken& name, const RtToken& newName)
-    {
-        RtStagePtr stage = getStage(name);
-        if (!stage)
-        {
-            throw ExceptionRuntimeError("Can't find a stage named '" + name.str() + "' to rename");
-        }
-        const RtToken uniqueName = makeUniqueName(newName);
-        stage->setName(uniqueName);
-        _stages[uniqueName] = stage;
-        _stages.erase(name);
-        return uniqueName;
-    }
-
-    RtTokenVec getStageNames() const
-    {
-        RtTokenVec names;
-        for (auto it : _stages)
-        {
-            names.push_back(it.first);
-        }
-        return names;
-    }
-
-    void reset()
-    {
-        static const RtTypeInfo masterPrimRootType("api_masterprimroot");
-        static const RtToken libRootName("api_libroot");
-
-        _masterPrimRoot.reset(new PvtPrim(&masterPrimRootType, masterPrimRootType.getShortTypeName(), nullptr));
-        _createFunctions.clear();
-        _stages.clear();
-
-        _libraryRoot.reset();
-        _libraries.clear();
-        _libraryRoot = RtStage::createNew(libRootName);
-    }
-
-    FileSearchPath _searchPaths;
-    FileSearchPath _implementationSearchPaths;
-    FileSearchPath _textureSearchPaths;
-    RtStagePtr _libraryRoot;
-    RtTokenMap<RtStagePtr> _libraries;
-
-    PvtDataHandle _masterPrimRoot;
-    RtTokenMap<RtPrimCreateFunc> _createFunctions;
-    RtTokenMap<RtStagePtr> _stages;
-};
-
-
-namespace 
+namespace
 {
     // Syntactic sugar
     inline PvtApi* _cast(void* ptr)
@@ -328,6 +61,20 @@ void RtApi::shutdown()
     _cast(_ptr)->reset();
 }
 
+void RtApi::registerLogger(RtLoggerPtr logger)
+{
+    _cast(_ptr)->registerLogger(logger);
+}
+
+void RtApi::unregisterLogger(RtLoggerPtr logger)
+{
+    _cast(_ptr)->unregisterLogger(logger);
+}
+
+void RtApi::log(RtLogger::MessageType type, const RtToken& msg)
+{
+    _cast(_ptr)->log(type, msg);
+}
 
 void RtApi::registerCreateFunction(const RtToken& typeName, RtPrimCreateFunc func)
 {
@@ -419,6 +166,11 @@ const FileSearchPath& RtApi::getImplementationSearchPath() const
     return _cast(_ptr)->getImplementationSearchPath();
 }
 
+void RtApi::createLibrary(const RtToken& name)
+{
+    _cast(_ptr)->createLibrary(name);
+}
+
 void RtApi::loadLibrary(const RtToken& name)
 {
     _cast(_ptr)->loadLibrary(name);
@@ -432,6 +184,21 @@ void RtApi::unloadLibrary(const RtToken& name)
 RtTokenVec RtApi::getLibraryNames() const
 {
     return _cast(_ptr)->getLibraryNames();
+}
+
+const FilePath& RtApi::getUserDefinitionPath() const
+{
+    return _cast(_ptr)->getUserDefinitionPath();
+}
+
+void RtApi::setUserDefinitionPath(const FilePath& path)
+{
+    return _cast(_ptr)->setUserDefinitionPath(path);
+}
+
+RtStagePtr RtApi::getLibrary(const RtToken& name)
+{
+    return _cast(_ptr)->getLibrary(name);
 }
 
 RtStagePtr RtApi::getLibrary()
@@ -462,6 +229,11 @@ RtToken RtApi::renameStage(const RtToken& name, const RtToken& newName)
 RtTokenVec RtApi::getStageNames() const
 {
     return _cast(_ptr)->getStageNames();
+}
+
+UnitConverterRegistryPtr RtApi::getUnitDefinitions()
+{
+    return _cast(_ptr)->getUnitDefinitions();
 }
 
 RtApi& RtApi::get()

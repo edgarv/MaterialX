@@ -13,11 +13,12 @@ void bindPyShader(py::module& mod);
 void bindPyShaderGenerator(py::module& mod);
 void bindPyGenContext(py::module& mod);
 void bindPyHwShaderGenerator(py::module& mod);
+void bindPyHwResourceBindingContext(py::module &mod);
+void bindPyGenUserData(py::module& mod);
 void bindPyGenOptions(py::module& mod);
 void bindPyShaderStage(py::module& mod);
 void bindPyUtil(py::module& mod);
 void bindPyTypeDesc(py::module& mod);
-void bindPyUnitConverters(py::module& mod);
 void bindPyUnitSystem(py::module& mod);
 
 PYBIND11_MODULE(PyMaterialXGenShader, mod)
@@ -31,9 +32,10 @@ PYBIND11_MODULE(PyMaterialXGenShader, mod)
     bindPyGenContext(mod);
     bindPyHwShaderGenerator(mod);
     bindPyGenOptions(mod);
+    bindPyGenUserData(mod);
     bindPyShaderStage(mod);
     bindPyUtil(mod);
     bindPyTypeDesc(mod);
-    bindPyUnitConverters(mod);
     bindPyUnitSystem(mod);
+    bindPyHwResourceBindingContext(mod);
 }

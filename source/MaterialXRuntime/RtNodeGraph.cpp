@@ -17,6 +17,7 @@ namespace
     static const RtTypeInfo SOCKETS_TYPE_INFO("_nodegraph_internal_sockets");
     static const RtToken SOCKETS("_nodegraph_internal_sockets");
     static const RtToken NODEGRAPH1("nodegraph1");
+    static const RtToken NODEDEF("nodedef");
 }
 
 DEFINE_TYPED_SCHEMA(RtNodeGraph, "node:nodegraph");
@@ -59,6 +60,18 @@ void RtNodeGraph::removeInput(const RtToken& name)
     prim()->removeAttribute(name);
 }
 
+void RtNodeGraph::renameInput(const RtToken& name, const RtToken& newName)
+{
+    PvtInput* input = prim()->getInput(name);
+    if (!(input && input->isA<PvtInput>()))
+    {
+        throw ExceptionRuntimeError("No input found with name '" + name.str() + "'");
+    }
+    PvtPrim* socket = prim()->getChild(SOCKETS);
+    socket->renameAttribute(name, newName);
+    prim()->renameAttribute(name, newName);
+}
+
 RtOutput RtNodeGraph::createOutput(const RtToken& name, const RtToken& type, uint32_t flags)
 {
     PvtPrim* socket = prim()->getChild(SOCKETS);
@@ -76,6 +89,18 @@ void RtNodeGraph::removeOutput(const RtToken& name)
     PvtPrim* socket = prim()->getChild(SOCKETS);
     socket->removeAttribute(name);
     prim()->removeAttribute(name);
+}
+
+void RtNodeGraph::renameOutput(const RtToken& name, const RtToken& newName)
+{
+    PvtOutput* output = prim()->getOutput(name);
+    if (!(output && output->isA<PvtOutput>()))
+    {
+        throw ExceptionRuntimeError("No output found with name '" + name.str() + "'");
+    }
+    PvtPrim* socket = prim()->getChild(SOCKETS);
+    socket->renameAttribute(name, newName);
+    prim()->renameAttribute(name, newName);
 }
 
 RtOutput RtNodeGraph::getInputSocket(const RtToken& name) const
@@ -104,6 +129,19 @@ RtPrimIterator RtNodeGraph::getNodes() const
 {
     RtSchemaPredicate<RtNode> predicate;
     return RtPrimIterator(hnd(), predicate);
+}
+
+const RtToken& RtNodeGraph::getDefinition() const
+{
+    RtTypedValue* v = prim()->getMetadata(NODEDEF);
+    return v ? v->getValue().asToken() : EMPTY_TOKEN;
+}
+
+/// Set the associated definition name.
+void RtNodeGraph::setDefinition(const RtToken& value)
+{
+    RtTypedValue* v = prim()->addMetadata(NODEDEF, RtType::TOKEN);
+    v->getValue().asToken() = value;
 }
 
 string RtNodeGraph::asStringDot() const

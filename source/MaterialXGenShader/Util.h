@@ -25,33 +25,6 @@ namespace MaterialX
 
 class ShaderGenerator;
 
-/// Removes the extension from the provided filename
-string removeExtension(const string& filename);
-
-/// Reads the contents of a file into the given string
-bool readFile(const string& filename, string& content);
-
-/// Scans for all documents under a root path and returns documents which can be loaded
-void loadDocuments(const FilePath& rootPath, const FileSearchPath& searchPath, const StringSet& skipFiles,
-                   const StringSet& includeFiles, vector<DocumentPtr>& documents, StringVec& documentsPaths,
-                   const XmlReadOptions& readOptions, StringVec& errors);
-
-/// Load a given MaterialX library into a document
-void loadLibrary(const FilePath& file, DocumentPtr doc, const FileSearchPath* searchPath = nullptr);
-
-/// Load all MaterialX files with given library names in given search paths.
-/// Note that all library files will have a URI set on them.
-StringVec loadLibraries(const StringVec& libraryNames,
-                        const FileSearchPath& searchPath,
-                        DocumentPtr doc,
-                        const StringSet* excludeFiles = nullptr);
-
-/// Load all MaterialX files with given library names in a given path.
-StringVec loadLibraries(const StringVec& libraryNames,
-                        const FilePath& filePath,
-                        DocumentPtr doc,
-                        const StringSet* excludeFiles = nullptr);
-
 /// Returns true if the given element is a surface shader with the potential
 /// of beeing transparent. This can be used by HW shader generators to determine
 /// if a shader will require transparency handling.
@@ -102,24 +75,24 @@ vector<MaterialAssignPtr> getGeometryBindings(NodePtr materialNode, const string
 /// Find any material node elements which are renderable (have input shaders)
 /// @param doc Document to examine
 /// @param elements List of renderable elements (returned)
-/// @param includeRefencedGraphs Whether to check for outputs on referenced graphs
-/// @param graphOutputs List of outputs examined. Graph outputs are added if they do
-///     not already exist
+/// @param includeReferencedGraphs Whether to check for outputs on referenced graphs
+/// @param processedOutputs List of outputs examined. Graph outputs are added if they
+///     do not already exist
 void findRenderableMaterialNodes(ConstDocumentPtr doc, 
                                  vector<TypedElementPtr>& elements, 
                                  bool includeReferencedGraphs,
-                                 std::unordered_set<OutputPtr> &processedOutputs);
+                                 std::unordered_set<OutputPtr>& processedOutputs);
 
 /// Find any shaderrefs elements which are renderable
 /// @param doc Document to examine
 /// @param elements List of renderable elements (returned)
-/// @param includeRefencedGraphs Whether to check for outputs on referenced graphs
-/// @param graphOutputs List of outputs examined. Graph outputs are added if they do
-///     not already exist
+/// @param includeReferencedGraphs Whether to check for outputs on referenced graphs
+/// @param processedOutputs List of outputs examined. Graph outputs are added if they
+///     do not already exist
 void findRenderableShaderRefs(ConstDocumentPtr doc,
                               vector<TypedElementPtr>& elements, 
                               bool includeReferencedGraphs,
-                              std::unordered_set<OutputPtr> &processedOutputs);
+                              std::unordered_set<OutputPtr>& processedOutputs);
 
 /// Find any elements which may be renderable from within a document.
 /// This includes all outputs on node graphs and shader references which are not

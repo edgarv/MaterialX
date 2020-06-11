@@ -31,6 +31,20 @@ enum ShaderInterfaceType
     SHADER_INTERFACE_REDUCED
 };
 
+
+/// Method to use for directional albedo evaluation
+enum DirectionalAlbedoMethod
+{
+    /// Use a curve fit approximation for directional albedo.
+    DIRECTIONAL_ALBEDO_CURVE_FIT,
+
+    /// Use a table look-up for directional albedo.
+    DIRECTIONAL_ALBEDO_TABLE,
+
+    /// Use importance sampling for directional albedo.
+    DIRECTIONAL_ALBEDO_IS
+};
+
 /// Method to use for specular environment lighting
 enum HwSpecularEnvironmentMethod
 {
@@ -54,6 +68,9 @@ class GenOptions
     GenOptions() :
         shaderInterfaceType(SHADER_INTERFACE_COMPLETE),
         fileTextureVerticalFlip(false),
+        addUpstreamDependencies(true),
+        directionalAlbedoMethod(DIRECTIONAL_ALBEDO_CURVE_FIT),
+        writeDirectionalAlbedoTable(false),
         hwTransparency(false),
         hwSpecularEnvironmentMethod(SPECULAR_ENVIRONMENT_FIS),
         hwWriteDepthMoments(false),
@@ -88,6 +105,18 @@ class GenOptions
     /// input distance values to the given unit.
     string targetDistanceUnit;
     
+    /// Sets whether to include upstream dependencies 
+    /// for the element to generate a shader for.
+    bool addUpstreamDependencies;
+
+    /// Sets the method to use for directional albedo evaluation
+    /// if needed for a shader target.
+    DirectionalAlbedoMethod directionalAlbedoMethod;
+
+    /// Enables the writing of a directional albedo table.
+    /// Defaults to false.
+    bool writeDirectionalAlbedoTable;
+
     /// Sets if transparency is needed or not for HW shaders.
     /// If a surface shader has potential of being transparent
     /// this must be set to true, otherwise no transparency
@@ -95,9 +124,9 @@ class GenOptions
     /// the surface will be fully opaque.
     bool hwTransparency;
 
-    /// Sets the method to use for specular environment 
-    /// lighting for HW shader targets.
-    int hwSpecularEnvironmentMethod;
+    /// Sets the method to use for specular environment lighting
+    /// for HW shader targets.
+    HwSpecularEnvironmentMethod hwSpecularEnvironmentMethod;
 
     /// Enables the writing of depth moments for HW shader targets.
     /// Defaults to false.

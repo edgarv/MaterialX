@@ -9,6 +9,8 @@
 #include <MaterialXCore/Node.h>
 #include <MaterialXCore/Util.h>
 
+#include <stdexcept>
+
 namespace MaterialX
 {
 
@@ -751,6 +753,17 @@ bool targetStringsMatch(const string& target1, const string& target2)
     return !matches.empty();
 }
 
+string prettyPrint(ConstElementPtr elem)
+{
+    string text;
+    for (TreeIterator it = elem->traverseTree().begin(); it != TreeIterator::end(); ++it)
+    {
+        string indent(it.getElementDepth() * 2, ' ');
+        text += indent + it.getElement()->asString() + "\n";
+    }
+    return text;
+}
+
 //
 // Element registry class
 //
@@ -786,6 +799,7 @@ const string T::CATEGORY(category);                     \
 ElementRegistry<T> registry##T;                         \
 INSTANTIATE_SUBCLASS(T)
 
+INSTANTIATE_CONCRETE_SUBCLASS(AttributeDef, "attributedef")
 INSTANTIATE_CONCRETE_SUBCLASS(Backdrop, "backdrop")
 INSTANTIATE_CONCRETE_SUBCLASS(BindParam, "bindparam")
 INSTANTIATE_CONCRETE_SUBCLASS(BindInput, "bindinput")

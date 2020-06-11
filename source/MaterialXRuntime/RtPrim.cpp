@@ -71,21 +71,54 @@ RtAttribute RtPrim::getAttribute(const RtToken& name) const
     return attr ? attr->hnd() : RtAttribute();
 }
 
+size_t RtPrim::numInputs() const
+{
+    return hnd()->asA<PvtPrim>()->numInputs();
+}
+
 RtInput RtPrim::getInput(const RtToken& name) const
 {
     PvtInput* input = hnd()->asA<PvtPrim>()->getInput(name);
     return input ? input->hnd() : RtInput();
 }
 
+size_t RtPrim::numOutputs() const
+{
+    return hnd()->asA<PvtPrim>()->numOutputs();
+}
+
 RtOutput RtPrim::getOutput(const RtToken& name) const
 {
-    PvtOutput* input = hnd()->asA<PvtPrim>()->getOutput(name);
-    return input ? input->hnd() : RtOutput();
+    PvtOutput* output = hnd()->asA<PvtPrim>()->getOutput(name);
+    return output ? output->hnd() : RtOutput();
+}
+
+RtOutput RtPrim::getOutput() const
+{
+    PvtOutput* output = hnd()->asA<PvtPrim>()->getOutput();
+    return output ? output->hnd() : RtOutput();
 }
 
 RtAttrIterator RtPrim::getAttributes(RtObjectPredicate filter) const
 {
     return RtAttrIterator(*this, filter);
+}
+
+RtAttrIterator RtPrim::getInputs() const
+{
+    RtObjTypePredicate<RtInput> filter;
+    return RtAttrIterator(*this, filter);
+}
+
+RtAttrIterator RtPrim::getOutputs() const
+{
+    RtObjTypePredicate<RtOutput> filter;
+    return RtAttrIterator(*this, filter);
+}
+
+size_t RtPrim::numChildren() const
+{
+    return hnd()->asA<PvtPrim>()->getAllChildren().size();
 }
 
 RtPrim RtPrim::getChild(const RtToken& name) const

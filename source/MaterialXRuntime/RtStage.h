@@ -17,6 +17,7 @@ namespace MaterialX
 {
 
 class RtPath;
+class RtNodeGraph;
 
 /// @class RtStage
 /// A stage is the root container of material description data.
@@ -31,6 +32,9 @@ public:
     /// Return the name of the stage.
     const RtToken& getName() const;
 
+    /// Return a list of source Uri loaded into a stage
+    const RtTokenVec& getSourceUri() const;
+
     /// Create a new prim at the root of the stage.
     RtPrim createPrim(const RtToken& typeName);
 
@@ -41,6 +45,10 @@ public:
     /// If an empty name is given a name will be generated.
     RtPrim createPrim(const RtPath& parentPath, const RtToken& name, const RtToken& typeName);
 
+    /// Create a node definition based on a nodegraph
+    RtPrim createNodeDef(RtNodeGraph& nodeGraph, 
+                         const RtToken& nodeDefName, const RtToken& nodeName, const RtToken& nodeGroup = EMPTY_TOKEN);
+
     /// Remove a prim from the stage.
     void removePrim(const RtPath& path);
 
@@ -50,11 +58,11 @@ public:
     /// Move a prim to a new parent.
     RtToken reparentPrim(const RtPath& path, const RtPath& newParentPath);
 
-    // Find the prim at the given path, Returns a null object
-    // if no such prim is found.
+    /// Find the prim at the given path, Returns a null object
+    /// if no such prim is found.
     RtPrim getPrimAtPath(const RtPath& path);
 
-    // Return the prim representing the root of the stage's prim hierarchy.
+    /// Return the prim representing the root of the stage's prim hierarchy.
     RtPrim getRootPrim();
 
     /// Return an iterator traversing all child prims (siblings) in the stage,
@@ -83,9 +91,15 @@ protected:
 
     void setName(const RtToken& name);
 
+    void disposePrim(const RtPath& path);
+    void restorePrim(const RtPath& parentPath, const RtPrim& prim);
+
     void* _ptr;
     friend class PvtStage;
     friend class PvtApi;
+    friend class PvtCreatePrimCmd;
+    friend class PvtCopyPrimCmd;
+    friend class PvtRemovePrimCmd;
 };
 
 }

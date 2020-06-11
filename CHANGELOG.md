@@ -1,6 +1,29 @@
 # Change Log
 
-## [1.37.0] - Development
+## [1.37.1] - 2020-06-04
+
+### Added
+- Added command-line options for mesh, light, and camera transforms to the viewer.
+- Added command-line options for screen dimensions and background color to the viewer.
+- Added a Light Rotation slider to the Advanced Settings panel of the viewer.
+- Added utility methods Backdrop\:\:setContainsElements and Backdrop\:\:getContainsElements.
+- Added backwards compatibility for OpenImageIO 1.x.
+- Added support for GCC 10.
+
+### Changed
+- Improved energy conservation and preservation computations in generated GLSL.
+- Upgraded Smith masking-shadowing to height-correlated form in generated GLSL.
+- Improved the robustness of tangent frame computations in MaterialXRender.
+- Renamed Backdrop\:\:setContains and getContains to Backdrop\:\:setContainsString and getContainsString for consistency.
+- Added `applyFutureUpdates` to XmlReadOptions. Updates current applied include:
+  - Upgrade from Material Element to Material Node
+  - Fix for arguments of from `atan2(x,y)` to `atan2(y,x)`. (in1 and in2 arguments are swapped)
+
+### Fixed
+- Fixed the GLSL implementation of Burley diffuse for punctual lights.
+- Fixed the upgrade path for compare nodes in v1.36 documents.
+
+## [1.37.0] - 2020-03-20
 
 Updated the MaterialX library to the v1.37 specification.  See the [v1.37 changelist](http://www.materialx.org/assets/MaterialX.v1.37REV2.Changelist.pdf) for full details.
 
@@ -16,7 +39,7 @@ Updated the MaterialX library to the v1.37 specification.  See the [v1.37 change
 - Replaced GeomAttr elements with GeomProp elements.
 - Replaced backdrop nodes with Backdrop elements.
 - Aligned Matrix33 and Matrix44 with the row-vector convention, for improved consistency with Imath, USD, and other libraries.
-- Updated the stb_image library to version 2.23
+- Updated the stb_image library to version 2.23.
 
 ## [1.36.5] - 2020-01-11
 

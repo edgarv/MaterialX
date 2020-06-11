@@ -97,7 +97,7 @@ void PropertyEditor::create(Viewer& parent)
     // Remove the window associated with the form.
     // This is done by explicitly creating and owning the window
     // as opposed to having it being done by the form
-    ng::Vector2i previousPosition(15, parentWindow->height() + 60);
+    ng::Vector2i previousPosition(15, parentWindow->height());
     if (_window)
     {
         for (int i = 0; i < _window->childCount(); i++)
@@ -122,7 +122,7 @@ void PropertyEditor::create(Viewer& parent)
     _window->setVisible(_visible);
 
     ng::VScrollPanel *scroll_panel = new ng::VScrollPanel(_window);
-    scroll_panel->setFixedHeight(200);
+    scroll_panel->setFixedHeight(300);
     _container = new ng::Widget(scroll_panel);
     _container->setLayout(new ng::GroupLayout(1, 1, 1, 1));
 
@@ -458,6 +458,7 @@ void PropertyEditor::addItemToForm(const mx::UIPropertyItem& item, const std::st
             }
         });
         v1->setSpinnable(editable);
+        v1->setEditable(editable);
         v2->setCallback([v1, path, viewer](float f)
         {
             MaterialPtr material = viewer->getSelectedMaterial();
@@ -471,6 +472,7 @@ void PropertyEditor::addItemToForm(const mx::UIPropertyItem& item, const std::st
             }
         });
         v2->setSpinnable(editable);
+        v2->setEditable(editable);
     }
 
     // Vec 3 input
@@ -507,6 +509,7 @@ void PropertyEditor::addItemToForm(const mx::UIPropertyItem& item, const std::st
             }
         });
         v1->setSpinnable(editable);
+        v1->setEditable(editable);
         v2->setCallback([v1, v3, path, viewer](float f)
         {
             MaterialPtr material = viewer->getSelectedMaterial();
@@ -521,6 +524,7 @@ void PropertyEditor::addItemToForm(const mx::UIPropertyItem& item, const std::st
             }
         });
         v2->setSpinnable(editable);
+        v2->setEditable(editable);
         v3->setCallback([v1, v2, path, viewer](float f)
         {
             MaterialPtr material = viewer->getSelectedMaterial();
@@ -534,6 +538,7 @@ void PropertyEditor::addItemToForm(const mx::UIPropertyItem& item, const std::st
             }
         });
         v3->setSpinnable(editable);
+        v3->setEditable(editable);
     }
 
     // Vec 4 input
@@ -588,6 +593,7 @@ void PropertyEditor::addItemToForm(const mx::UIPropertyItem& item, const std::st
             }
         });
         v2->setSpinnable(editable);
+        v2->setEditable(editable);
         v3->setCallback([v1, v2, v4, path, viewer](float f)
         {
             MaterialPtr material = viewer->getSelectedMaterial();
@@ -602,6 +608,7 @@ void PropertyEditor::addItemToForm(const mx::UIPropertyItem& item, const std::st
             }
         });
         v3->setSpinnable(editable);
+        v3->setEditable(editable);
         v4->setCallback([v1, v2, v3, path, viewer](float f)
         {
             MaterialPtr material = viewer->getSelectedMaterial();
@@ -616,6 +623,7 @@ void PropertyEditor::addItemToForm(const mx::UIPropertyItem& item, const std::st
             }
         });
         v4->setSpinnable(editable);
+        v4->setEditable(editable);
     }
 
     // String
@@ -709,7 +717,6 @@ void PropertyEditor::updateContents(Viewer* viewer)
         nameLabel->setFontSize(20);
     }
 
-    const bool showAdvancedItems = viewer->showAdvancedProperties();
     bool addedItems = false;
     const mx::VariableBlock* publicUniforms = material->getPublicUniforms();
     if (publicUniforms)
@@ -728,10 +735,6 @@ void PropertyEditor::updateContents(Viewer* viewer)
             const std::string& folder = it->first;
             const mx::UIPropertyItem& item = it->second;
 
-            if (item.ui.uiAdvanced && !showAdvancedItems)
-            {
-                continue;
-            }
             // Find out if the uniform is editable. Some
             // inputs may be optimized out during compilation.
             if (material->findUniform(item.variable->getPath()))
@@ -747,10 +750,6 @@ void PropertyEditor::updateContents(Viewer* viewer)
         for (auto it2 = unnamedGroups.begin(); it2 != unnamedGroups.end(); ++it2)
         {
             const mx::UIPropertyItem& item = it2->second;
-            if (item.ui.uiAdvanced && !showAdvancedItems)
-            {
-                continue;
-            }
             if (material->findUniform(item.variable->getPath()))
             {
                 addItemToForm(item, addedLabel ? mx::EMPTY_STRING : otherString, _container, viewer, editable);
@@ -810,6 +809,7 @@ ng::FloatBox<float>* createFloatWidget(ng::Widget* parent, const std::string& la
         {
             box->setValueIncrement(ui->uiStep->asA<float>());
             box->setSpinnable(true);
+            box->setEditable(true);
         }
     }
 

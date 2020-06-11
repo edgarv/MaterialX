@@ -130,9 +130,47 @@ class FilePath
         return i != string::npos ? baseName.substr(i + 1) : EMPTY_STRING;
     }
 
+    /// Add a file extension to the given path.
+    void addExtension(const string& ext)
+    {
+        assign(asString() + "." + ext);
+    }
+
+    /// Remove the file extension, if any, from the given path.
+    void removeExtension()
+    {
+        if (!isEmpty())
+        {
+            string& baseName = _vec[_vec.size() - 1];
+            size_t i = baseName.rfind('.');
+            if (i != string::npos)
+            {
+                baseName = baseName.substr(0, i);
+            }
+        }
+    }
+
     /// Concatenate two paths with a directory separator, returning the
     /// combined path.
     FilePath operator/(const FilePath& rhs) const;
+
+    /// Return the number of paths in the sequence.
+    size_t size() const
+    {
+        return _vec.size();
+    }
+
+    /// Return the path at the given index.
+    string operator[](size_t index)
+    {
+        return _vec[index];
+    }
+
+    /// Return the const path at the given index.
+    const string& operator[](size_t index) const
+    {
+        return _vec[index];
+    }
 
     /// @}
     /// @name File System Operations
@@ -157,6 +195,9 @@ class FilePath
 
     /// Return the current working directory of the file system.
     static FilePath getCurrentPath();
+
+    /// Return the directory containing the executable module.
+    static FilePath getModulePath();
 
   private:
     StringVec _vec;
@@ -209,12 +250,6 @@ class FileSearchPath
         return str;
     }
 
-    /// Clear the search paths
-    void clear()
-    {
-        _paths.clear();
-    }
-
     /// Append the given path to the sequence.
     void append(const FilePath& path)
     {
@@ -236,6 +271,12 @@ class FileSearchPath
         _paths.insert(_paths.begin(), path);
     }
     
+    /// Clear all paths from the sequence.
+    void clear()
+    {
+        _paths.clear();
+    }
+
     /// Return the number of paths in the sequence.
     size_t size() const
     {

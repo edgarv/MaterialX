@@ -38,7 +38,7 @@ RtPrim RtNode::createPrim(const RtToken& typeName, const RtToken& name, RtPrim p
     const PvtPrim* nodedef = PvtObject::ptr<PvtPrim>(master);
 
     const RtToken nodeName = (name == EMPTY_TOKEN ?
-        RtToken(nodedefSchema.getNode().str() + "1") : name);
+        RtToken(nodedefSchema.getNode().str()) : name);
 
     PvtDataHandle nodeH = PvtPrim::createNew(&_typeInfo, nodeName, PvtObject::ptr<PvtPrim>(parent));
     PvtPrim* node = nodeH->asA<PvtPrim>();
@@ -46,6 +46,25 @@ RtPrim RtNode::createPrim(const RtToken& typeName, const RtToken& name, RtPrim p
     // Save the nodedef in a relationship.
     PvtRelationship* nodedefRelation = node->createRelationship(NODEDEF);
     nodedefRelation->addTarget(nodedef);
+
+    // Copy over meta-data from nodedef to node. 
+    // TODO: Checks with ILM need to be made to make sure that the appropriate
+    // meta-data set. TBD if target should be set.
+    RtTokenSet copyList = { RtNodeDef::VERSION };
+    const vector<RtToken>& metadata = nodedef->getMetadataOrder();
+    for (const RtToken dataName : metadata)
+    { 
+        if (copyList.count(dataName))
+        {
+            const RtTypedValue* src = nodedef->getMetadata(dataName);
+            RtTypedValue* v = src ? node->addMetadata(dataName, src->getType()) : nullptr;
+            if (v)
+            {
+                RtToken valueToCopy = src->getValue().asToken();
+                v->getValue().asToken() = valueToCopy;
+            }
+        }
+    }
 
     // Create the interface according to nodedef.
     for (const PvtDataHandle& attrH : nodedef->getAllAttributes())
@@ -72,6 +91,25 @@ RtPrim RtNode::getNodeDef() const
     return nodedef && nodedef->hasTargets() ? nodedef->getAllTargets()[0] : RtPrim();
 }
 
+void RtNode::setNodeDef(RtPrim nodeDef)
+{
+    PvtRelationship* nodedefRel = prim()->getRelationship(NODEDEF);
+    if (!nodedefRel)
+    {
+        nodedefRel = prim()->createRelationship(NODEDEF);
+    }
+    else
+    {
+        nodedefRel->clearTargets();
+    }
+    nodedefRel->addTarget(PvtObject::ptr<PvtPrim>(nodeDef));
+}
+
+size_t RtNode::numInputs() const
+{
+    return prim()->numInputs();
+}
+
 RtInput RtNode::getInput(const RtToken& name) const
 {
     PvtInput* input = prim()->getInput(name);
@@ -80,8 +118,12 @@ RtInput RtNode::getInput(const RtToken& name) const
 
 RtAttrIterator RtNode::getInputs() const
 {
-    RtObjTypePredicate<RtInput> filter;
-    return RtAttrIterator(getPrim(), filter);
+    return getPrim().getInputs();
+}
+
+size_t RtNode::numOutputs() const
+{
+    return prim()->numOutputs();
 }
 
 RtOutput RtNode::getOutput(const RtToken& name) const
@@ -90,10 +132,15 @@ RtOutput RtNode::getOutput(const RtToken& name) const
     return output ? output->hnd() : RtOutput();
 }
 
+RtOutput RtNode::getOutput() const
+{
+    PvtOutput* output = prim()->getOutput();
+    return output ? output->hnd() : RtOutput();
+}
+
 RtAttrIterator RtNode::getOutputs() const
 {
-    RtObjTypePredicate<RtOutput> filter;
-    return RtAttrIterator(getPrim(), filter);
+    return getPrim().getOutputs();
 }
 
 }

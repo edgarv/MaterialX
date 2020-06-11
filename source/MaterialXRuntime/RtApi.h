@@ -10,15 +10,16 @@
 /// TODO: Docs
 
 #include <MaterialXRuntime/Library.h>
+#include <MaterialXRuntime/RtLogger.h>
 #include <MaterialXRuntime/RtPrim.h>
+#include <MaterialXRuntime/RtTypeDef.h>
 
 #include <MaterialXFormat/File.h>
 
+#include <MaterialXCore/Unit.h>
+
 namespace MaterialX
 {
-
-/// Function type for creating prims for a typed schema.
-using RtPrimCreateFunc = std::function<RtPrim(const RtToken& typeName, const RtToken& name, RtPrim parent)>;
 
 class RtApi
 {
@@ -30,6 +31,15 @@ public:
 
     /// Shutdown the API session.
     void shutdown();
+
+    /// Registers a logger with the API
+    void registerLogger(RtLoggerPtr logger);
+
+    /// Unregisters a logger with the API
+    void unregisterLogger(RtLoggerPtr logger);
+
+    /// Logs a message with the registered loggers
+    void log(RtLogger::MessageType type, const RtToken& msg);
 
     /// Register a create function for a typename.
     void registerCreateFunction(const RtToken& typeName, RtPrimCreateFunc func);
@@ -45,7 +55,7 @@ public:
     RtPrimCreateFunc getCreateFunction(const RtToken& typeName);
 
     /// Register a master prim to be used for creating instances from.
-    /// A typical usecase is for registering a nodedef prim to be used for
+    /// A typical use case is for registering a nodedef prim to be used for
     /// creating node instances.
     void registerMasterPrim(const RtPrim& prim);
 
@@ -107,6 +117,9 @@ public:
     /// Get search path for implemntations used by libraries. 
     const FileSearchPath& getImplementationSearchPath() const;
 
+    /// Create a library.
+    void createLibrary(const RtToken& name);
+
     /// Load a library.
     void loadLibrary(const RtToken& name);
 
@@ -116,8 +129,17 @@ public:
     /// Return a list of all loaded libraries.
     RtTokenVec getLibraryNames() const;
 
+    /// Return a particular library stage
+    RtStagePtr getLibrary(const RtToken& name);
+
     /// Return the library stage containing all loaded libraries.
     RtStagePtr getLibrary();
+
+    /// Set location for non-library user definitions
+    const FilePath& getUserDefinitionPath() const;
+
+    /// Set location for non-library user definitions
+    void setUserDefinitionPath(const FilePath& path);
 
     /// Create a new empty stage.
     RtStagePtr createStage(const RtToken& name);
@@ -134,6 +156,9 @@ public:
     /// Return a list of all stages created.
     RtTokenVec getStageNames() const;
 
+    /// Return a registry of unit definitions
+    UnitConverterRegistryPtr getUnitDefinitions();
+
     /// Get the singleton API instance.
     static RtApi& get();
 
@@ -142,7 +167,9 @@ public:
 
 protected:
     RtApi();
+
     void* _ptr;
+    friend class PvtApi;
 };
 
 
@@ -167,6 +194,12 @@ public:
     RtApi* operator->()
     {
         return &RtApi::get();
+    }
+
+    /// Access a reference to the api instance.
+    RtApi& operator*()
+    {
+        return RtApi::get();
     }
 };
 

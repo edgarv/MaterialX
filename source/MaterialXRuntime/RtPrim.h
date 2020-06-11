@@ -83,17 +83,40 @@ public:
     /// if no such attribute exists.
     RtAttribute getAttribute(const RtToken& name) const;
 
+    /// Return the number of inputs on the prim.
+    size_t numInputs() const;
+
     /// Return an input attribute by name, or a null object
     /// if no such input attribute exists.
     RtInput getInput(const RtToken& name) const;
 
+    /// Return the number of outputs on the prim.
+    size_t numOutputs() const;
+
     /// Return an input attribute by name, or a null object
-    /// if no such input attribute exists.
+    /// if no such input attribute exists. If an empty name
+    /// is provided, then the first output is returned
     RtOutput getOutput(const RtToken& name) const;
+
+    /// Return the single output for single output prims.
+    /// Or if multiple outputs are available return the
+    /// last created output.
+    RtOutput getOutput() const;
 
     /// Return an iterator traversing all attributes
     /// of this prim.
     RtAttrIterator getAttributes(RtObjectPredicate predicate = nullptr) const;
+
+    /// Return an iterator traversing all input attributes
+    /// on this prim.
+    RtAttrIterator getInputs() const;
+
+    /// Return an iterator traversing all output attributes
+    /// on this prim.
+    RtAttrIterator getOutputs() const;
+
+    /// Return the number of children in the prim.
+    size_t numChildren() const;
 
     /// Return a child prim by name, or a null object
     /// if no such child prim exists.
@@ -105,6 +128,9 @@ public:
     /// specific API, etc.
     RtPrimIterator getChildren(RtObjectPredicate predicate = nullptr) const;
 };
+
+/// Function type for creating prims for a typed schema.
+using RtPrimCreateFunc = std::function<RtPrim(const RtToken& typeName, const RtToken& name, RtPrim parent)>;
 
 }
 
